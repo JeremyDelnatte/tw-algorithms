@@ -1,17 +1,16 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::{graph::Graph, treewidth::{compute_q, compute_q_bitset}};
+use crate::{graph::{Graph, adjlist, bitset}, treewidth::{compute_q, compute_q_bitset}, utils::bitset::BitSet};
 
 pub fn treewidth(graph: &Graph) -> usize {
-    if graph.n() > 64 {
-        treewidth_vec(graph)
-    } else {
-        treewidth_bitset(graph)
+    match graph {
+        Graph::AdjList(g) => treewidth_vec(g),
+        Graph::BitSet(g) => treewidth_bitset(g),
     }
 }
 
 
-fn treewidth_vec(graph: &Graph) -> usize {
+fn treewidth_vec(graph: &adjlist::Graph) -> usize {
     let mut pred: HashMap<Vec<bool>, usize> = HashMap::new();
     pred.insert(vec![false; graph.n()], 0);
 
@@ -68,21 +67,21 @@ fn treewidth_vec(graph: &Graph) -> usize {
     *pred.values().next().unwrap()
 }
 
-fn treewidth_bitset(graph: &Graph) -> usize {
-    let mut pred: HashMap<u64, usize> = HashMap::new();
-    pred.insert(0u64, 0);
+fn treewidth_bitset(graph: &bitset::Graph) -> usize {
+    let mut pred: HashMap<BitSet, usize> = HashMap::new();
+    pred.insert(BitSet::new(), 0);
 
-    let mut current: HashMap<u64, usize> = HashMap::new();
+    let mut current: HashMap<BitSet, usize> = HashMap::new();
 
     for _ in 0..graph.n() {
         for subset in pred.keys() {
             for candidate in 0..graph.n() {
-                if subset & (1 << candidate) != 0 {
+                if subset.contains(candidate) {
                     continue;
                 }
 
                 let mut new_subset = *subset;
-                new_subset |= 1 << candidate;
+                new_subset.insert(candidate);
 
                 if current.contains_key(&new_subset) {
                     continue;
@@ -90,17 +89,12 @@ fn treewidth_bitset(graph: &Graph) -> usize {
 
                 let mut min = usize::MAX;
 
-                let mut tmp = new_subset;
-
-                while tmp != 0 {
-                    let v = tmp.trailing_zeros() as usize;
-                    tmp &= tmp - 1;
-
+                for v in new_subset {
                     let q_value = compute_q_bitset(v, graph, new_subset);
 
-                    new_subset &= !(1 << v);
+                    new_subset.remove(v);
                     let tw = pred.get(&new_subset).unwrap();
-                    new_subset |= 1 << v;
+                    new_subset.insert(v);
 
                     let val = std::cmp::max(*tw, q_value);
                     if val < min {
@@ -122,20 +116,34 @@ fn treewidth_bitset(graph: &Graph) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::graph::Graph;
 
     #[test]
-    fn test_treewidth() {
-        let g = Graph::new_cycle(3);
+    fn test_treewidth_vec() {
+        let g = Graph::AdjList(adjlist::Graph::new_cycle(3));
         assert_eq!(treewidth(&g), 2);
 
-        let g = Graph::new_path(4);
+        let g = Graph::AdjList(adjlist::Graph::new_path(4));
         assert_eq!(treewidth(&g), 1);
 
-        let g = Graph::new_cycle(5);
+        let g = Graph::AdjList(adjlist::Graph::new_cycle(5));
         assert_eq!(treewidth(&g), 2);
 
-        let g = Graph::new_complete(4);
+        let g = Graph::AdjList(adjlist::Graph::new_complete(4));
+        assert_eq!(treewidth(&g), 3);
+    }
+
+    #[test]
+    fn test_treewidth_bitset() {
+        let g = Graph::BitSet(bitset::Graph::new_cycle(3));
+        assert_eq!(treewidth(&g), 2);
+
+        let g = Graph::BitSet(bitset::Graph::new_path(4));
+        assert_eq!(treewidth(&g), 1);
+
+        let g = Graph::BitSet(bitset::Graph::new_cycle(5));
+        assert_eq!(treewidth(&g), 2);
+
+        let g = Graph::BitSet(bitset::Graph::new_complete(4));
         assert_eq!(treewidth(&g), 3);
     }
 }

@@ -1,11 +1,25 @@
 [package]
-name = "code"
+name = "tw_algorithms"
 version = "0.1.0"
 edition = "2024"
+default-run = "tw_algorithms"
 
 [dependencies]
 thiserror = "2.0.17"
 itertools = "0.14"
+clap = { version = "4.5.53", features = ["derive"] }
+rand = "0.10.0"
+strum = { version = "0.27.2", features = ["derive"] }
+csv = "1.4"
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.49", features = ["full"] }
 
 # viuer = "0.4"
 # tempfile = "3.5"
+
+[dev-dependencies]
+criterion = "0.8.2"
+
+[[bench]]
+name = "random_graphs"
+harness = false

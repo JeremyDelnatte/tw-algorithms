@@ -2,19 +2,22 @@ use std::collections::HashSet;
 
 use itertools::Itertools;
 
-use crate::{graph::Graph, treewidth::{compute_q, compute_q_bitset}};
+use crate::{graph::{Graph, adjlist, bitset}, treewidth::{combinations_bitset, compute_q, compute_q_bitset}, utils::bitset::BitSet};
 
 pub fn treewidth(graph: &Graph) -> usize {
-    if graph.n() > 64 {
-        let subset = (0..graph.n()).collect();
-        treewdith_recursive(graph, &HashSet::new(), subset)
-
-    } else {
-        treewdith_recursive_bitset(graph, 0, (1u64 << graph.n()) - 1)
+    match graph {
+        Graph::AdjList(g) => {
+            let vertices: HashSet<usize> = (0..g.n()).collect();
+            treewdith_recursive(g, &HashSet::new(), vertices)
+        },
+        Graph::BitSet(g) => {
+            let vertices = BitSet::from_bits((1 << g.n()) - 1);
+            treewdith_recursive_bitset(g, BitSet::new(), vertices)
+        },
     }
 }
 
-fn treewdith_recursive(graph: &Graph, left: &HashSet<usize>, vertices: HashSet<usize>) -> usize {
+pub(super) fn treewdith_recursive(graph: &adjlist::Graph, left: &HashSet<usize>, vertices: HashSet<usize>) -> usize {
     if vertices.len() == 1 {
         let v = *vertices.iter().next().unwrap();
         return compute_q(v, graph, &left);
@@ -49,19 +52,17 @@ fn treewdith_recursive(graph: &Graph, left: &HashSet<usize>, vertices: HashSet<u
     opt
 }
 
-fn treewdith_recursive_bitset(graph: &Graph, left: u64, vertices: u64) -> usize {
+pub(super) fn treewdith_recursive_bitset(graph: &bitset::Graph, left: BitSet, vertices: BitSet) -> usize {
 
     // If there is only one vertex in vertices.
-    // This is true if vertices is a power of two (i.e. one bit to 1).
-    if vertices != 0 && (vertices & (vertices - 1)) == 0 {
-        let v = vertices.trailing_zeros() as usize;
-
+    if vertices.has_one_bit() {
+        let v = vertices.first_bit().unwrap();
         return compute_q_bitset(v, graph, left);
     }
 
     let mut opt = usize::MAX;
 
-    for subset in combinations(vertices) {
+    for subset in combinations_bitset(vertices, vertices.len() / 2) {
         let complement = vertices & !subset;
 
         let new_left = left | subset;
@@ -78,57 +79,37 @@ fn treewdith_recursive_bitset(graph: &Graph, left: u64, vertices: u64) -> usize 
     opt
 }
 
-pub fn combinations(mut subset: u64) -> Vec<u64> {
-    let mut positions = Vec::new();
-
-    while subset != 0 {
-        let u = subset.trailing_zeros() as usize;
-        positions.push(u);
-        subset &= subset - 1;
-    }
-
-    let k = positions.len() / 2;
-    let mut result = Vec::new();
-    let mut combination = (1u64 << k) - 1;
-    let limit = 1u64 << positions.len();
-
-    while combination < limit {
-        let mut subset = 0u64;
-        let mut tmp = combination;
-
-        while tmp != 0 {
-            let bit_pos = tmp.trailing_zeros() as usize;
-            subset |= 1u64 << positions[bit_pos];
-            tmp &= tmp - 1;
-        }
-
-        result.push(subset);
-
-        let x = combination & (!combination + 1);
-        let y = combination + x;
-        combination = (((combination & !y) / x) >> 1) | y;
-    }
-
-    result
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::graph::Graph;
 
     #[test]
-    fn test_treewidth() {
-        let g = Graph::new_cycle(3);
+    fn test_treewidth_vec() {
+        let g = Graph::AdjList(adjlist::Graph::new_cycle(3));
         assert_eq!(treewidth(&g), 2);
 
-        let g = Graph::new_path(4);
+        let g = Graph::AdjList(adjlist::Graph::new_path(4));
         assert_eq!(treewidth(&g), 1);
 
-        let g = Graph::new_cycle(5);
+        let g = Graph::AdjList(adjlist::Graph::new_cycle(5));
         assert_eq!(treewidth(&g), 2);
 
-        let g = Graph::new_complete(4);
+        let g = Graph::AdjList(adjlist::Graph::new_complete(4));
+        assert_eq!(treewidth(&g), 3);
+    }
+
+    #[test]
+    fn test_treewidth_bitset() {
+        let g = Graph::BitSet(bitset::Graph::new_cycle(3));
+        assert_eq!(treewidth(&g), 2);
+
+        let g = Graph::BitSet(bitset::Graph::new_path(4));
+        assert_eq!(treewidth(&g), 1);
+
+        let g = Graph::BitSet(bitset::Graph::new_cycle(5));
+        assert_eq!(treewidth(&g), 2);
+
+        let g = Graph::BitSet(bitset::Graph::new_complete(4));
         assert_eq!(treewidth(&g), 3);
     }
 }
