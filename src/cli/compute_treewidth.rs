@@ -1,10 +1,10 @@
 use std::io::{BufRead, Write, stdout};
 
-use crate::{cli::AlgorithmArg, commands};
+use crate::{cli::ExactAlgorithmArg, commands};
 
 pub(super) fn compute_treewidth_single(
     g6: &str,
-    algorithm: AlgorithmArg,
+    algorithm: ExactAlgorithmArg,
     with_bitset: bool,
     expected_treewidth: Option<usize>,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -27,7 +27,7 @@ pub(super) fn compute_treewidth_single(
 
 pub(super) fn compute_treewidth_file(
     filename: &str,
-    algorithm: AlgorithmArg,
+    algorithm: ExactAlgorithmArg,
     with_bitset: bool,
     expected_treewidth: Option<usize>,
 ) -> Result<(), Box<dyn std::error::Error>> {

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::{
     graph::{Graph, adjlist, bitset},
-    treewidth::{all_connected_component, all_connected_component_bitset, combinations_bitset, rec}, utils::bitset::BitSet,
+    treewidth::exact::{all_connected_component, all_connected_component_bitset, combinations_bitset, rec}, utils::bitset::BitSet,
 };
 
 pub fn treewidth(graph: &Graph) -> usize {

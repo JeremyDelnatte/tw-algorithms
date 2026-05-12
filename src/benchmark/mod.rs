@@ -4,13 +4,13 @@ use csv::Writer;
 use serde::Serialize;
 use tokio::{task, time::timeout};
 
-use crate::{benchmark::{preset_graphs::{run_preset_graphs_benchmark, run_preset_graphs_benchmark_timeout}, random_graphs::run_random_graphs_benchmark}, graph::{self, Graph}, treewidth::{self, Algorithm}};
+use crate::{benchmark::{preset_graphs::{run_preset_graphs_benchmark, run_preset_graphs_benchmark_timeout}, random_graphs::run_random_graphs_benchmark}, graph::{self, Graph}, treewidth::{self, exact::{self, ExactAlgorithm}}};
 
 mod random_graphs;
 mod preset_graphs;
 
 pub struct BenchmarkConfig {
-    pub algorithm: Algorithm,
+    pub algorithm: ExactAlgorithm,
     pub benchmark_type: BenchmarkType,
 }
 
@@ -35,13 +35,13 @@ struct ExperimentResult {
     name: Option<String>,
 }
 
-fn run_algorithm(algorithm: &Algorithm, graph: &Graph, output: &mut Writer<File>, name: Option<&str>) -> f64 {
+fn run_algorithm(algorithm: &ExactAlgorithm, graph: &Graph, output: &mut Writer<File>, name: Option<&str>) -> f64 {
     let start_time = std::time::Instant::now();
     let tw = match algorithm {
-        Algorithm::DynamicProg => treewidth::dynamic_prog::treewidth(&graph),
-        Algorithm::Recursive => treewidth::rec::treewidth(&graph),
-        Algorithm::ImprovedRec => treewidth::improved_rec::treewidth(&graph),
-        Algorithm::BranchBound => treewidth::branch_bound::treewidth(&graph),
+        ExactAlgorithm::DynamicProg => exact::dynamic_prog::treewidth(&graph),
+        ExactAlgorithm::Recursive => exact::rec::treewidth(&graph),
+        ExactAlgorithm::ImprovedRec => exact::improved_rec::treewidth(&graph),
+        ExactAlgorithm::BranchBound => exact::branch_bound::treewidth(&graph),
     };
     let duration = start_time.elapsed();
     let runtime = duration.as_secs_f64();
@@ -58,7 +58,7 @@ fn run_algorithm(algorithm: &Algorithm, graph: &Graph, output: &mut Writer<File>
     runtime
 }
 
-async fn run_algorithm_timeout(algorithm: &Algorithm, graph: &Graph, output: &mut Writer<File>, name: Option<&str>, timeout_dur: std::time::Duration) -> Option<f64> {
+async fn run_algorithm_timeout(algorithm: &ExactAlgorithm, graph: &Graph, output: &mut Writer<File>, name: Option<&str>, timeout_dur: std::time::Duration) -> Option<f64> {
     let graph = graph.clone();
     let graph_g6 = graph.to_g6();
     let algorithm = algorithm.clone();
@@ -66,10 +66,10 @@ async fn run_algorithm_timeout(algorithm: &Algorithm, graph: &Graph, output: &mu
     let (tw, runtime) = match timeout(timeout_dur, task::spawn_blocking(move || {
         let start_time = std::time::Instant::now();
         let tw = match algorithm {
-            Algorithm::DynamicProg => treewidth::dynamic_prog::treewidth(&graph),
-            Algorithm::Recursive => treewidth::rec::treewidth(&graph),
-            Algorithm::ImprovedRec => treewidth::improved_rec::treewidth(&graph),
-            Algorithm::BranchBound => treewidth::branch_bound::treewidth(&graph),
+            ExactAlgorithm::DynamicProg => exact::dynamic_prog::treewidth(&graph),
+            ExactAlgorithm::Recursive => exact::rec::treewidth(&graph),
+            ExactAlgorithm::ImprovedRec => exact::improved_rec::treewidth(&graph),
+            ExactAlgorithm::BranchBound => exact::branch_bound::treewidth(&graph),
         };
         let duration = start_time.elapsed();
         let runtime = duration.as_secs_f64();

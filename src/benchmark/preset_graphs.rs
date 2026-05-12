@@ -1,11 +1,10 @@
 use std::{fs::{File, create_dir_all}, io::{BufRead, Write, stdout}};
 
 use csv::Writer;
-use tokio::task;
 
-use crate::{benchmark::{run_algorithm, run_algorithm_timeout}, graph::{self, adjlist}, treewidth::Algorithm};
+use crate::{benchmark::{run_algorithm, run_algorithm_timeout}, graph::{self, adjlist}, treewidth::exact::ExactAlgorithm};
 
-pub fn run_preset_graphs_benchmark(algorithm: &Algorithm, graph_file: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_preset_graphs_benchmark(algorithm: &ExactAlgorithm, graph_file: &str) -> Result<(), Box<dyn std::error::Error>> {
     let input_path = std::path::Path::new(graph_file);
     let filename = input_path.file_name().ok_or("Invalid graph file path")?.to_string_lossy();
 
@@ -65,7 +64,7 @@ pub fn run_preset_graphs_benchmark(algorithm: &Algorithm, graph_file: &str) -> R
     Ok(())
 }
 
-pub async fn run_preset_graphs_benchmark_timeout(algorithm: &Algorithm, graph_file: &str, timeout: std::time::Duration) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run_preset_graphs_benchmark_timeout(algorithm: &ExactAlgorithm, graph_file: &str, timeout: std::time::Duration) -> Result<(), Box<dyn std::error::Error>> {
     let input_path = std::path::Path::new(graph_file);
     let filename = input_path.file_name().ok_or("Invalid graph file path")?.to_string_lossy();
 

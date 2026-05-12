@@ -3,9 +3,9 @@ use csv::Writer;
 
 use rand::SeedableRng;
 
-use crate::{benchmark::run_algorithm, graph, treewidth::Algorithm};
+use crate::{benchmark::run_algorithm, graph, treewidth::exact::ExactAlgorithm};
 
-pub fn run_random_graphs_benchmark(algorithm: &Algorithm, seed: u64, num_iterations: usize, num_vertices: usize, num_edges: usize) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_random_graphs_benchmark(algorithm: &ExactAlgorithm, seed: u64, num_iterations: usize, num_vertices: usize, num_edges: usize) -> Result<(), Box<dyn std::error::Error>> {
     create_dir_all("benchmarks/random_graphs")?;
     let file = File::create(format!("benchmarks/random_graphs/{:?}_n{}_m{}.csv", algorithm, num_vertices, num_edges))?;
     let mut writer = Writer::from_writer(file);

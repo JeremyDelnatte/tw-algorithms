@@ -1,5 +1,4 @@
 use clap::Parser;
-use tw_algorithms::benchmark::{run_benchmarks, run_benchmarks_timeout};
 
 mod commands;
 mod cli;

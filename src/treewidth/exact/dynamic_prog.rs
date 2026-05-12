@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::{graph::{Graph, adjlist, bitset}, treewidth::{compute_q, compute_q_bitset}, utils::bitset::BitSet};
+use crate::{graph::{Graph, adjlist, bitset}, treewidth::exact::{compute_q, compute_q_bitset}, utils::bitset::BitSet};
 
 pub fn treewidth(graph: &Graph) -> usize {
     match graph {

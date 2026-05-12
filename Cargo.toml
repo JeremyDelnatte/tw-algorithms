@@ -16,10 +16,3 @@ tokio = { version = "1.49", features = ["full"] }
 
 # viuer = "0.4"
 # tempfile = "3.5"
-
-[dev-dependencies]
-criterion = "0.8.2"
-
-[[bench]]
-name = "random_graphs"
-harness = false
