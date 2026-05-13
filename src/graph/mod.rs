@@ -2,11 +2,15 @@ use crate::utils::{bitset::Bits, g6::{self, get_edges, get_size}};
 
 pub mod adjlist;
 pub mod bitset;
+pub mod fixedbitset;
+pub mod newbitset;
 
 #[derive(Debug, Clone)]
 pub enum Graph {
     AdjList(adjlist::Graph),
     BitSet(bitset::Graph),
+    FixedBitSet(fixedbitset::Graph),
+    NewBitSet(newbitset::Graph),
 }
 
 impl Graph {
@@ -34,6 +38,8 @@ impl Graph {
         match self {
             Graph::AdjList(g) => g.to_g6(),
             Graph::BitSet(g) => unimplemented!(),
+            Graph::FixedBitSet(g) => unimplemented!(),
+            Graph::NewBitSet(g) => unimplemented!(),
         }
     }
 

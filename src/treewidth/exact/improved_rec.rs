@@ -20,7 +20,9 @@ pub fn treewidth(graph: &Graph) -> usize {
                 k -= 1;
             }
             k + 1
-        }
+        },
+        Graph::FixedBitSet(_) => todo!(),
+        Graph::NewBitSet(_) => todo!(),
     }
 }
 

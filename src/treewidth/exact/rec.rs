@@ -14,6 +14,8 @@ pub fn treewidth(graph: &Graph) -> usize {
             let vertices = BitSet::from_bits((1 << g.n()) - 1);
             treewdith_recursive_bitset(g, BitSet::new(), vertices)
         },
+        Graph::FixedBitSet(_) => todo!(),
+        Graph::NewBitSet(_) => todo!(),
     }
 }
 

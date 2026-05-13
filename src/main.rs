@@ -1,4 +1,5 @@
 use clap::Parser;
+use fixedbitset::FixedBitSet;
 
 mod commands;
 mod cli;

@@ -28,12 +28,14 @@ impl Cli {
                         compute_args.algorithm,
                         self.with_bitset,
                         compute_args.expected_treewidth,
+                        compute_args.time_only,
                     ),
                     InputType::GraphsFile(filename) => compute_treewidth::compute_treewidth_file(
                         &filename,
                         compute_args.algorithm,
                         self.with_bitset,
                         compute_args.expected_treewidth,
+                        compute_args.time_only,
                     ),
                 }
             }
@@ -44,12 +46,14 @@ impl Cli {
                         approx_args.algorithm,
                         self.with_bitset,
                         approx_args.optimal_treewidth,
+                        approx_args.time_only,
                     ),
                     InputType::GraphsFile(filename) => approximate_treewidth::approximate_treewidth_file(
                         &filename,
                         approx_args.algorithm,
                         self.with_bitset,
                         approx_args.optimal_treewidth,
+                        approx_args.time_only,
                     ),
                 }
             }
@@ -135,6 +139,13 @@ struct ComputeTreewidthArgs {
 
     #[arg(short = 't', long = "treewidth")]
     expected_treewidth: Option<usize>,
+
+    #[arg(
+        long = "time-only",
+        global = true,
+        help = "Only print the execution time of the algorithm, without any additional output"
+    )]
+    time_only: bool,
 }
 
 impl ComputeTreewidthArgs {
@@ -169,6 +180,13 @@ struct ApproximateTreewidthArgs {
 
     #[arg(short = 't', long = "treewidth")]
     optimal_treewidth: Option<usize>,
+
+    #[arg(
+        long = "time-only",
+        global = true,
+        help = "Only print the execution time of the algorithm, without any additional output"
+    )]
+    time_only: bool,
 }
 
 impl ApproximateTreewidthArgs {
