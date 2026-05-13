@@ -1,4 +1,8 @@
-use clap::{ArgGroup, Parser, Subcommand, ValueEnum};
+use std::time::Duration;
+
+use clap::{Parser, Subcommand};
+
+use crate::cli::{approximate_treewidth::ApproximateTreewidthArgs, compute_treewidth::ComputeTreewidthArgs};
 
 pub mod compute_treewidth;
 pub mod approximate_treewidth;
@@ -14,6 +18,14 @@ pub struct Cli {
     )]
     with_bitset: bool,
 
+    #[arg(
+        long = "timeout",
+        global = true,
+        help = "Set a timeout for treewidth computations (e.g., 30s, 5m, 1h)",
+        value_parser = parse_duration,
+    )]
+    timeout: Option<Duration>,
+
     #[command(subcommand)]
     command: Command,
 }
@@ -21,43 +33,9 @@ pub struct Cli {
 impl Cli {
     pub fn run(self) -> Result<(), Box<dyn std::error::Error>> {
         match self.command {
-            Command::ComputeTreewidth(compute_args) => {
-                match compute_args.input_type() {
-                    InputType::SingleGraph(g6) => compute_treewidth::compute_treewidth_single(
-                        &g6,
-                        compute_args.algorithm,
-                        self.with_bitset,
-                        compute_args.expected_treewidth,
-                        compute_args.time_only,
-                    ),
-                    InputType::GraphsFile(filename) => compute_treewidth::compute_treewidth_file(
-                        &filename,
-                        compute_args.algorithm,
-                        self.with_bitset,
-                        compute_args.expected_treewidth,
-                        compute_args.time_only,
-                    ),
-                }
-            }
-            Command::ApproximateTreewidth(approx_args) => {
-                match approx_args.input_type() {
-                    InputType::SingleGraph(g6) => approximate_treewidth::approximate_treewidth_single(
-                        &g6,
-                        approx_args.algorithm,
-                        self.with_bitset,
-                        approx_args.optimal_treewidth,
-                        approx_args.time_only,
-                    ),
-                    InputType::GraphsFile(filename) => approximate_treewidth::approximate_treewidth_file(
-                        &filename,
-                        approx_args.algorithm,
-                        self.with_bitset,
-                        approx_args.optimal_treewidth,
-                        approx_args.time_only,
-                    ),
-                }
-            }
-            // Command::Benchmark => crate::benchmark::run_benchmarks(),
+            Command::ComputeTreewidth(args) => compute_treewidth::run(args, self.with_bitset, self.timeout),
+            Command::ApproximateTreewidth(args) => approximate_treewidth::run(args, self.with_bitset, self.timeout),
+            Command::Benchmark => todo!(),
         }
     }
 }
@@ -70,48 +48,8 @@ enum Command {
     #[command(visible_aliases = ["atw", "approx", "a", "apx"])]
     ApproximateTreewidth(ApproximateTreewidthArgs),
 
-    // #[command(visible_aliases = ["bm", "b"])]
-    // Benchmark,
-}
-
-#[derive(Clone, ValueEnum, Debug)]
-enum ExactAlgorithmArg {
-    #[value(alias("dp"))]
-    DynamicProg,
-
-    #[value(alias("rec"))]
-    Recursive,
-
-    #[value(alias("imprec"))]
-    ImprovedRec,
-
-    #[value(alias("bb"))]
-    BranchBound,
-}
-
-impl From<ExactAlgorithmArg> for tw_algorithms::treewidth::exact::ExactAlgorithm {
-    fn from(arg: ExactAlgorithmArg) -> Self {
-        match arg {
-            ExactAlgorithmArg::DynamicProg => Self::DynamicProg,
-            ExactAlgorithmArg::Recursive => Self::Recursive,
-            ExactAlgorithmArg::ImprovedRec => Self::ImprovedRec,
-            ExactAlgorithmArg::BranchBound => Self::BranchBound,
-        }
-    }
-}
-
-#[derive(Clone, ValueEnum, Debug)]
-enum ApproxAlgorithmArg {
-    #[value(alias("4apx"))]
-    FourApprox,
-}
-
-impl From<ApproxAlgorithmArg> for tw_algorithms::treewidth::approx::ApproxAlgorithm {
-    fn from(arg: ApproxAlgorithmArg) -> Self {
-        match arg {
-            ApproxAlgorithmArg::FourApprox => Self::FourApprox,
-        }
-    }
+    #[command(visible_aliases = ["bm", "b"])]
+    Benchmark,
 }
 
 enum InputType {
@@ -119,85 +57,31 @@ enum InputType {
     GraphsFile(String),
 }
 
-#[derive(Parser)]
-#[command(
-    group(
-        ArgGroup::new("input")
-            .required(true)
-            .args(["graph", "graphs_file"])
-    )
-)] // Ensure that exactly one of --graph or --file is provided
-struct ComputeTreewidthArgs {
-    #[arg(short = 'a', long, value_enum, default_value_t = ExactAlgorithmArg::DynamicProg)]
-    algorithm: ExactAlgorithmArg,
+fn parse_duration(s: &str) -> Result<Duration, String> {
+    let s = s.trim();
 
-    #[arg(short = 'f', long = "file")]
-    graphs_file: Option<String>,
-
-    #[arg(short = 'g', long)]
-    graph: Option<String>,
-
-    #[arg(short = 't', long = "treewidth")]
-    expected_treewidth: Option<usize>,
-
-    #[arg(
-        long = "time-only",
-        global = true,
-        help = "Only print the execution time of the algorithm, without any additional output"
-    )]
-    time_only: bool,
-}
-
-impl ComputeTreewidthArgs {
-    fn input_type(&self) -> InputType {
-        match (&self.graphs_file, &self.graph) {
-            (Some(file), None) => InputType::GraphsFile(file.to_string()),
-            (None, Some(g)) => InputType::SingleGraph(g.to_string()),
-            _ => {
-                unreachable!("Clap should ensure that exactly one of --file or --graph is provided")
-            }
-        }
+    if s.is_empty() {
+        return Err("timeout cannot be empty".to_string());
     }
-}
 
-#[derive(Parser)]
-#[command(
-    group(
-        ArgGroup::new("input")
-            .required(true)
-            .args(["graph", "graphs_file"])
-    )
-)] // Ensure that exactly one of --graph or --file is provided
-struct ApproximateTreewidthArgs {
-    #[arg(short = 'a', long, value_enum, default_value_t = ApproxAlgorithmArg::FourApprox)]
-    algorithm: ApproxAlgorithmArg,
+    let split_at = s
+        .find(|c: char| !c.is_ascii_digit())
+        .unwrap_or(s.len());
 
-    #[arg(short = 'f', long = "file")]
-    graphs_file: Option<String>,
+    let number = &s[..split_at];
+    let unit = &s[split_at..];
+    let value: u64 = number
+        .parse()
+        .map_err(|_| format!("invalid timeout number: {number}"))?;
 
-    #[arg(short = 'g', long)]
-    graph: Option<String>,
-
-    #[arg(short = 't', long = "treewidth")]
-    optimal_treewidth: Option<usize>,
-
-    #[arg(
-        long = "time-only",
-        global = true,
-        help = "Only print the execution time of the algorithm, without any additional output"
-    )]
-    time_only: bool,
-}
-
-impl ApproximateTreewidthArgs {
-    fn input_type(&self) -> InputType {
-        match (&self.graphs_file, &self.graph) {
-            (Some(file), None) => InputType::GraphsFile(file.to_string()),
-            (None, Some(g)) => InputType::SingleGraph(g.to_string()),
-            _ => {
-                unreachable!("Clap should ensure that exactly one of --file or --graph is provided")
-            }
-        }
+    match unit {
+        "" | "s" | "sec" | "secs" | "second" | "seconds" => Ok(Duration::from_secs(value)),
+        "m" | "min" | "mins" | "minute" | "minutes" => Ok(Duration::from_secs(value * 60)),
+        "h" | "hr" | "hrs" | "hour" | "hours" => Ok(Duration::from_secs(value * 60 * 60)),
+        "ms" => Ok(Duration::from_millis(value)),
+        "ns" => Ok(Duration::from_nanos(value)),
+        "us" => Ok(Duration::from_micros(value)),
+        _ => Err(format!("invalid timeout unit: {unit}")),
     }
 }
 

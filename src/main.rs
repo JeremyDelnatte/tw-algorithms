@@ -1,8 +1,7 @@
 use clap::Parser;
-use fixedbitset::FixedBitSet;
 
-mod commands;
 mod cli;
+mod timeout;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
