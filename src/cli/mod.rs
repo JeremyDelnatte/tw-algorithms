@@ -2,10 +2,16 @@ use std::time::Duration;
 
 use clap::{Parser, Subcommand};
 
-use crate::cli::{approximate_treewidth::ApproximateTreewidthArgs, benchmark::BenchmarkArgs, compute_treewidth::ComputeTreewidthArgs};
+use crate::cli::{
+    approximate_treewidth::ApproximateTreewidthArgs,
+    benchmark::BenchmarkArgs,
+    compute_treewidth::ComputeTreewidthArgs,
+    heuristic_treewidth::HeuristicTreewidthArgs,
+};
 
 pub mod compute_treewidth;
 pub mod approximate_treewidth;
+pub mod heuristic_treewidth;
 pub mod benchmark;
 pub mod progress_bar;
 
@@ -37,6 +43,7 @@ impl Cli {
         match self.command {
             Command::ComputeTreewidth(args) => compute_treewidth::run(args, self.with_bitset, self.timeout),
             Command::ApproximateTreewidth(args) => approximate_treewidth::run(args, self.with_bitset, self.timeout),
+            Command::HeuristicTreewidth(args) => heuristic_treewidth::run(args, self.with_bitset, self.timeout),
             Command::Benchmark(args) => benchmark::run(args, self.with_bitset, self.timeout),
         }
     }
@@ -49,6 +56,9 @@ enum Command {
 
     #[command(visible_aliases = ["atw", "approx", "a", "apx"])]
     ApproximateTreewidth(ApproximateTreewidthArgs),
+
+    #[command(visible_aliases = ["htw", "heuristic", "h", "heu"])]
+    HeuristicTreewidth(HeuristicTreewidthArgs),
 
     #[command(visible_aliases = ["bm", "b"])]
     Benchmark(BenchmarkArgs),

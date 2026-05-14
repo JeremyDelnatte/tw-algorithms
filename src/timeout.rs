@@ -3,11 +3,11 @@ use std::time::{Duration, Instant};
 
 use thiserror::Error;
 use serde::Deserialize;
-use tw_algorithms::treewidth::Algorithm;
 
 use crate::cli::approximate_treewidth::ApproxAlgorithmArg;
 use crate::cli::benchmark::AlgorithmArg;
 use crate::cli::compute_treewidth::ExactAlgorithmArg;
+use crate::cli::heuristic_treewidth::HeuristicAlgorithmArg;
 
 #[derive(Debug, Error)]
 pub enum TreewidthProcessError {
@@ -51,6 +51,7 @@ pub fn compute_or_approximate_treewidth(
     match algorithm {
         AlgorithmArg::Exact(exact_alg) => compute_treewidth(g6, exact_alg, with_bitset, timeout),
         AlgorithmArg::Approx(approx_alg) => approximate_treewidth(g6, approx_alg, with_bitset, timeout),
+        AlgorithmArg::Heuristic(heuristic_alg) => heuristic_treewidth(g6, heuristic_alg, with_bitset, timeout),
     }
 }
 
@@ -70,6 +71,15 @@ pub fn approximate_treewidth(
     timeout: Duration,
 ) -> Result<(usize, Duration), TreewidthProcessError> {
     run_command_timeout("approximate-treewidth", g6, &algorithm.to_string(), with_bitset, timeout)
+}
+
+pub fn heuristic_treewidth(
+    g6: &str,
+    algorithm: HeuristicAlgorithmArg,
+    with_bitset: bool,
+    timeout: Duration,
+) -> Result<(usize, Duration), TreewidthProcessError> {
+    run_command_timeout("heuristic-treewidth", g6, &algorithm.to_string(), with_bitset, timeout)
 }
 
 fn run_command_timeout(

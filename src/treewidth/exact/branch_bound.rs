@@ -265,7 +265,7 @@ fn least_edge_fill_vertex(g: &adjlist::Graph) -> usize {
     vertex_min
 }
 
-fn min_fill(g: &adjlist::Graph) -> usize {
+pub(in crate::treewidth) fn min_fill(g: &adjlist::Graph) -> usize {
     let mut g = g.clone();
     let mut max_clique = 0;
 

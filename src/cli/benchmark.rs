@@ -6,22 +6,33 @@ use rand::SeedableRng;
 use serde::{Deserialize, Serialize};
 use tw_algorithms::{graph::adjlist::Graph, treewidth};
 
-use crate::{cli::{approximate_treewidth::ApproxAlgorithmArg, compute_treewidth::ExactAlgorithmArg, progress_bar}, timeout};
+use crate::{
+    cli::{
+        approximate_treewidth::ApproxAlgorithmArg,
+        compute_treewidth::ExactAlgorithmArg,
+        heuristic_treewidth::HeuristicAlgorithmArg,
+        progress_bar,
+    },
+    timeout,
+};
 
 #[derive(Parser)]
 #[command(
     group(
         ArgGroup::new("alg")
             .required(true)
-            .args(["exact_algorithm", "approximate_algorithm"])
+            .args(["exact_algorithm", "approximate_algorithm", "heuristic_algorithm"])
     )
-)] // Ensure that exactly one of --exact-algorithm or --approximate-algorithm is provided
+)] // Ensure that exactly one algorithm type is provided
 pub struct BenchmarkArgs {
     #[arg(long, value_enum)]
     exact_algorithm: Option<ExactAlgorithmArg>,
 
     #[arg(long, value_enum)]
     approximate_algorithm: Option<ApproxAlgorithmArg>,
+
+    #[arg(long, value_enum)]
+    heuristic_algorithm: Option<HeuristicAlgorithmArg>,
 
     #[arg(short = 'p', long = "progress-bar", help = "Show progress bars during benchmarking")]
     show_progress_bar: bool,
@@ -70,6 +81,7 @@ struct PresetGraphsArgs {
 pub enum AlgorithmArg {
     Exact(ExactAlgorithmArg),
     Approx(ApproxAlgorithmArg),
+    Heuristic(HeuristicAlgorithmArg),
 }
 
 impl std::fmt::Debug for AlgorithmArg {
@@ -77,6 +89,7 @@ impl std::fmt::Debug for AlgorithmArg {
         match self {
             AlgorithmArg::Exact(exact_alg) => write!(f, "{:?}", exact_alg),
             AlgorithmArg::Approx(approx_alg) => write!(f, "{:?}", approx_alg),
+            AlgorithmArg::Heuristic(heuristic_alg) => write!(f, "{:?}", heuristic_alg),
         }
     }
 }
@@ -86,6 +99,7 @@ impl From<AlgorithmArg> for treewidth::Algorithm {
         match arg {
             AlgorithmArg::Exact(exact_alg) => treewidth::Algorithm::Exact(exact_alg.into()),
             AlgorithmArg::Approx(approx_alg) => treewidth::Algorithm::Approx(approx_alg.into()),
+            AlgorithmArg::Heuristic(heuristic_alg) => treewidth::Algorithm::Heuristic(heuristic_alg.into()),
         }
     }
 }
@@ -105,6 +119,8 @@ pub fn run(args: BenchmarkArgs, with_bitset: bool, timeout: Option<std::time::Du
         AlgorithmArg::Exact(exact_alg)
     } else if let Some(approx_alg) = args.approximate_algorithm {
         AlgorithmArg::Approx(approx_alg)
+    } else if let Some(heuristic_alg) = args.heuristic_algorithm {
+        AlgorithmArg::Heuristic(heuristic_alg)
     } else {
         return Err("No algorithm specified".into());
     };
@@ -148,12 +164,14 @@ fn benchmark_random_graphs(
     let num_edges = args.num_edges;
     let seed = args.seed;
 
-    let dir = match algorithm {
-        AlgorithmArg::Exact(_) => "exact",
-        AlgorithmArg::Approx(_) => "approx",
-    };
-
-    let dir_path = format!("benchmarks/random_graphs/{}", dir);
+    // let dir = match algorithm {
+    //     AlgorithmArg::Exact(_) => "exact",
+    //     AlgorithmArg::Approx(_) => "approx",
+    //     AlgorithmArg::Heuristic(_) => "heuristic",
+    // };
+    //
+    // let dir_path = format!("benchmarks/random_graphs/{}", dir);
+    let dir_path = directory_path("random_graphs", algorithm);
     create_dir_all(&dir_path)?;
 
     let with_bitset_str = if with_bitset { "_bitset" } else { "" };
@@ -191,12 +209,14 @@ fn verify_benchmark_random_graphs(
     let num_edges = args.num_edges;
     let seed = args.seed;
 
-    let dir = match algorithm {
-        AlgorithmArg::Exact(_) => "exact",
-        AlgorithmArg::Approx(_) => "approx",
-    };
-
-    let dir_path = format!("benchmarks/random_graphs/{}", dir);
+    // let dir = match algorithm {
+    //     AlgorithmArg::Exact(_) => "exact",
+    //     AlgorithmArg::Approx(_) => "approx",
+    //     AlgorithmArg::Heuristic(_) => "heuristic",
+    // };
+    //
+    // let dir_path = format!("benchmarks/random_graphs/{}", dir);
+    let dir_path = directory_path("random_graphs", algorithm);
     let with_bitset_str = if with_bitset { "_bitset" } else { "" };
 
     let file_path = format!("{}/{:?}_n{}_m{}_s{}{}.csv", dir_path, algorithm, num_vertices, num_edges, seed, with_bitset_str);
@@ -244,12 +264,14 @@ fn benchmark_preset_graphs(
     let input_file = std::fs::File::open(input_path)?;
     let reader = std::io::BufReader::new(input_file);
 
-    let dir = match algorithm {
-        AlgorithmArg::Exact(_) => "exact",
-        AlgorithmArg::Approx(_) => "approx",
-    };
-
-    let dir_path = format!("benchmarks/preset_graphs/{}", dir);
+    // let dir = match algorithm {
+    //     AlgorithmArg::Exact(_) => "exact",
+    //     AlgorithmArg::Approx(_) => "approx",
+    //     AlgorithmArg::Heuristic(_) => "heuristic",
+    // };
+    //
+    // let dir_path = format!("benchmarks/preset_graphs/{}", dir);
+    let dir_path = directory_path("preset_graphs", algorithm);
     create_dir_all(&dir_path)?;
 
     let with_bitset_str = if with_bitset { "_bitset" } else { "" };
@@ -294,12 +316,14 @@ fn verify_benchmark_preset_graphs(
     let input_path = std::path::Path::new(&args.graph_file);
     let filename = input_path.file_name().ok_or("Invalid graph file path")?.to_string_lossy();
 
-    let dir = match algorithm {
-        AlgorithmArg::Exact(_) => "exact",
-        AlgorithmArg::Approx(_) => "approx",
-    };
-
-    let dir_path = format!("benchmarks/preset_graphs/{}", dir);
+    // let dir = match algorithm {
+    //     AlgorithmArg::Exact(_) => "exact",
+    //     AlgorithmArg::Approx(_) => "approx",
+    //     AlgorithmArg::Heuristic(_) => "heuristic",
+    // };
+    //
+    // let dir_path = format!("benchmarks/preset_graphs/{}", dir);
+    let dir_path = directory_path("preset_graphs", algorithm);
     let with_bitset_str = if with_bitset { "_bitset" } else { "" };
     let file_path = format!("{}/{:?}_{}{}.csv", dir_path, algorithm, filename, with_bitset_str);
 
@@ -339,6 +363,16 @@ fn verify_benchmark_preset_graphs(
     }
 
     Ok(true)
+}
+
+fn directory_path(benchmark_type: &str, algorithm: AlgorithmArg) -> String {
+    let dir = match algorithm {
+        AlgorithmArg::Exact(_) => "exact",
+        AlgorithmArg::Approx(_) => "approx",
+        AlgorithmArg::Heuristic(_) => "heuristic",
+    };
+    let dir_path = format!("benchmarks/{}/{}", benchmark_type, dir);
+    dir_path
 }
 
 fn run_algorithm(
