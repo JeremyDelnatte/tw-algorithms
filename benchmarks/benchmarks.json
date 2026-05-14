@@ -1,0 +1,57 @@
+{
+    "benchmarks": [
+      {
+        "name": "dp_n15_m30",
+        "benchmark": "random_graphs",
+        "exact_algorithm": "dp",
+        "n": 15,
+        "m": 30,
+        "num_iterations": 100,
+        "seed": 42,
+        "force": true,
+        "timeout": "1s"
+      },
+      {
+        "name": "dp_n10_m20",
+        "benchmark": "random graphs",
+        "exact_algorithm": "dp",
+        "n": 10,
+        "m": 20,
+        "num_iterations": 1000,
+        "seed": 42,
+        "force": true,
+        "timeout": "1s",
+        "bitset": true
+      },
+      {
+        "name": "imprec_n18_m28",
+        "benchmark": "random_graphs",
+        "exact_algorithm": "imprec",
+        "n": 18,
+        "m": 28,
+        "num_iterations": 1000,
+        "seed": 42,
+        "force": true
+      },
+      {
+        "name": "mf_n25_m45",
+        "benchmark": "random-graphs",
+        "heuristic_algorithm": "mf",
+        "n": 25,
+        "m": 45,
+        "num_iterations": 100000,
+        "seed": 42,
+        "force": true
+      },
+      {
+        "name": "fourapx_n30_m60",
+        "benchmark": "random graphs",
+        "approximate_algorithm": "4apx",
+        "n": 30,
+        "m": 60,
+        "num_iterations": 10,
+        "seed": 42,
+        "force": true
+      }
+    ]
+  }
