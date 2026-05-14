@@ -5,7 +5,7 @@ use tw_algorithms::treewidth::{self, approx::ApproxAlgorithm};
 
 use crate::{cli::InputType, timeout::{self, TreewidthProcessError}};
 
-#[derive(Clone, ValueEnum, Debug)]
+#[derive(Clone, ValueEnum, Debug, Copy)]
 pub enum ApproxAlgorithmArg {
     #[value(alias("4apx"))]
     FourApprox,

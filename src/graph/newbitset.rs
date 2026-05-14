@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use rand::{RngExt, rngs::StdRng};
+
 use crate::{graph::adjlist, utils::{g6::{self, get_edges, get_size}, newbitset::NewBitSet}};
 
 #[derive(Debug, Clone)]
@@ -134,6 +136,26 @@ impl Graph {
         while edges_added < m {
             let i = rand::random::<u64>() as usize % n;
             let j = rand::random::<u64>() as usize % n;
+
+            if i != j && graph.add_edge(i, j) {
+                edges_added += 1;
+            }
+        }
+
+        graph
+    }
+
+    pub fn generate_random_with_rng(n: usize, m: usize, rng: &mut StdRng) -> Self {
+        if m > n * (n - 1) / 2 {
+            panic!("Too many edges for the number of vertices");
+        }
+
+        let mut graph = Graph::new(n);
+        let mut edges_added = 0;
+
+        while edges_added < m {
+            let i = rng.random_range(0..n);
+            let j = rng.random_range(0..n);
 
             if i != j && graph.add_edge(i, j) {
                 edges_added += 1;

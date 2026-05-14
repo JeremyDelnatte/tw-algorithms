@@ -6,7 +6,7 @@ use tw_algorithms::treewidth;
 
 use crate::{cli::InputType, timeout::{self, TreewidthProcessError}};
 
-#[derive(Clone, ValueEnum, Debug)]
+#[derive(Clone, ValueEnum, Debug, Copy)]
 pub enum ExactAlgorithmArg {
     #[value(alias("dp"))]
     DynamicProg,

@@ -2,10 +2,12 @@ use std::time::Duration;
 
 use clap::{Parser, Subcommand};
 
-use crate::cli::{approximate_treewidth::ApproximateTreewidthArgs, compute_treewidth::ComputeTreewidthArgs};
+use crate::cli::{approximate_treewidth::ApproximateTreewidthArgs, benchmark::BenchmarkArgs, compute_treewidth::ComputeTreewidthArgs};
 
 pub mod compute_treewidth;
 pub mod approximate_treewidth;
+pub mod benchmark;
+pub mod progress_bar;
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -35,7 +37,7 @@ impl Cli {
         match self.command {
             Command::ComputeTreewidth(args) => compute_treewidth::run(args, self.with_bitset, self.timeout),
             Command::ApproximateTreewidth(args) => approximate_treewidth::run(args, self.with_bitset, self.timeout),
-            Command::Benchmark => todo!(),
+            Command::Benchmark(args) => benchmark::run(args, self.with_bitset, self.timeout),
         }
     }
 }
@@ -49,7 +51,7 @@ enum Command {
     ApproximateTreewidth(ApproximateTreewidthArgs),
 
     #[command(visible_aliases = ["bm", "b"])]
-    Benchmark,
+    Benchmark(BenchmarkArgs),
 }
 
 enum InputType {
@@ -84,21 +86,3 @@ fn parse_duration(s: &str) -> Result<Duration, String> {
         _ => Err(format!("invalid timeout unit: {unit}")),
     }
 }
-
-// #[derive(Parser)]
-// struct BenchmarkArgs {
-//     #[arg(short = 'a', long, value_enum, default_value_t = ExactAlgorithmArg::DynamicProg)]
-//     algorithm: ExactAlgorithmArg,
-//
-//     #[arg(short = 'r', long = "random", help = "Whether to generate random graphs for benchmarking")]
-//     generate_random_graphs: bool,
-//
-//     #[arg(short = 'i', long = "iterations", default_value_t = 100, help = "Number of iterations for benchmarking")]
-//     num_iterations: usize,
-//
-//     #[arg(short = 'n', long = "vertices", default_value_t = 10, help = "Number of vertices for random graphs")]
-//     num_vertices: usize,
-//
-//     #[arg(short = 'm', long = "edges", default_value_t = 15, help = "Number of edges for random graphs")]
-//     num_edges: usize,
-// }

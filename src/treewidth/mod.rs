@@ -4,6 +4,23 @@ use crate::{graph::{self, adjlist}, treewidth::{approx::{ApproxAlgorithm, four_a
 
 pub mod exact;
 pub mod approx;
+pub mod heuristic;
+
+pub enum Algorithm {
+    Exact(ExactAlgorithm),
+    Approx(ApproxAlgorithm),
+}
+
+pub fn compute_or_approximate_treewidth(
+    g6: &str,
+    algorithm: Algorithm,
+    with_bitset: bool,
+) -> Result<(usize, Duration), Box<dyn std::error::Error>> {
+    match algorithm {
+        Algorithm::Exact(exact_alg) => compute_treewidth(g6, exact_alg, with_bitset),
+        Algorithm::Approx(approx_alg) => approximate_treewidth(g6, approx_alg, with_bitset),
+    }
+}
 
 pub fn compute_treewidth(
     g6: &str,

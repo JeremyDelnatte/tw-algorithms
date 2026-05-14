@@ -3,8 +3,10 @@ use std::time::{Duration, Instant};
 
 use thiserror::Error;
 use serde::Deserialize;
+use tw_algorithms::treewidth::Algorithm;
 
 use crate::cli::approximate_treewidth::ApproxAlgorithmArg;
+use crate::cli::benchmark::AlgorithmArg;
 use crate::cli::compute_treewidth::ExactAlgorithmArg;
 
 #[derive(Debug, Error)]
@@ -38,6 +40,18 @@ impl TreewidthProcessError {
 struct TreewidthProcessOutput {
     treewidth: usize,
     duration_ns: u64,
+}
+
+pub fn compute_or_approximate_treewidth(
+    g6: &str,
+    algorithm: AlgorithmArg,
+    with_bitset: bool,
+    timeout: Duration,
+) -> Result<(usize, Duration), TreewidthProcessError> {
+    match algorithm {
+        AlgorithmArg::Exact(exact_alg) => compute_treewidth(g6, exact_alg, with_bitset, timeout),
+        AlgorithmArg::Approx(approx_alg) => approximate_treewidth(g6, approx_alg, with_bitset, timeout),
+    }
 }
 
 pub fn compute_treewidth(

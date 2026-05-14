@@ -1,1 +1,8 @@
 /target
+*.svg
+*.png
+*.txt
+*.zip
+*.jpg
+*.jpeg
+*.gz
