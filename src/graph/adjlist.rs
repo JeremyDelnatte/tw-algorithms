@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use std::{fs::File, io::{self, BufRead, BufReader}};
+use std::{collections::HashSet, fs::File, io::{self, BufRead, BufReader}};
 
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
@@ -53,6 +53,10 @@ impl Graph {
 
     pub fn m(&self) -> usize {
         self.m
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.n == 0
     }
 
     pub fn neighbors(&self, i: usize) -> Option<Vec<usize>> {
@@ -169,6 +173,99 @@ impl Graph {
         Some(neighbors_vertex)
     }
 
+    pub fn elim_vertex(&mut self, v: usize) {
+        let neighbors = self.remove_vertex_neighbors(v).unwrap();
+        let num_neighbors = neighbors.len();
+
+        if num_neighbors == 0 {
+            return;
+        }
+
+        for i in 0..(num_neighbors - 1) {
+            let vertex_i = neighbors[i];
+            for j in (i + 1)..num_neighbors {
+                self.add_edge(vertex_i, neighbors[j]);
+            }
+        }
+    }
+
+    pub fn elim_vertex_edges(&mut self, v: usize) -> HashSet<(usize, usize)> {
+        let neighbors = self.remove_vertex_neighbors(v).unwrap();
+        let num_neighbors = neighbors.len();
+        let mut added_edges = HashSet::new();
+
+        if num_neighbors == 0 {
+            return added_edges;
+        }
+
+        for i in 0..(num_neighbors - 1) {
+            let vertex_i = neighbors[i];
+            for j in (i + 1)..num_neighbors {
+                if self.add_edge(vertex_i, neighbors[j]) {
+                    added_edges.insert((vertex_i, neighbors[j]));
+                }
+            }
+        }
+
+        added_edges
+    }
+
+    fn fill_in_count_vertex(&self, v: usize) -> usize {
+        let neighbors = self.neighbors_ref(v).unwrap();
+        let num_neighbors = neighbors.len();
+
+        if num_neighbors == 0 {
+            return 0;
+        }
+
+        let mut edges_missing = 0;
+        for i in 0..(num_neighbors - 1) {
+            let vertex_i = neighbors[i];
+            for j in (i + 1)..num_neighbors {
+                if !self.has_edge(vertex_i, neighbors[j]) {
+                    edges_missing += 1;
+                }
+            }
+        }
+
+        edges_missing
+    }
+
+    pub fn least_fill_in_count_vertex(&self) -> usize {
+        let mut min = self.fill_in_count_vertex(0);
+        let mut vertex_min = 0;
+
+        // NOTE: In the case of ties, we choose the vertex with the smallest degree, as this will
+        // probably lead to a smaller min-fill.
+        let mut min_degree = self.degree(0);
+
+        for v in 1..self.n() {
+            let fill = self.fill_in_count_vertex(v);
+            if fill < min || (fill == min && self.degree(v) < min_degree) {
+                min = fill;
+                vertex_min = v;
+                min_degree = self.degree(v);
+            }
+        }
+
+        vertex_min
+    }
+
+    pub fn contract_edge(&mut self, mut u: usize, v: usize) {
+        let neighbors = self.remove_vertex_neighbors(v).unwrap();
+
+        // After removing v, u's index may have decreased by 1.
+        if u > v {
+            u -= 1;
+        }
+
+        for neighbor in neighbors {
+            if neighbor != u {
+                self.add_edge(u, neighbor);
+            }
+        }
+    }
+
     pub fn degree(&self, v: usize) -> usize {
         if v >= self.n {
             panic!("Index out of bounds");
@@ -200,9 +297,7 @@ impl Graph {
             panic!("Vertex has no neighbors");
         }
 
-        *neighbors.iter()
-            .min_by_key(|&&u| self.neighbors_ref(u).unwrap().len())
-            .unwrap()
+        *neighbors.iter().min_by_key(|&&u| self.degree(u)).unwrap()
     }
 
     pub fn from_g6(repr: &str) -> Result<Self, g6::Error> {

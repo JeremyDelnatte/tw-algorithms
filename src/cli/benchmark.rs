@@ -104,6 +104,8 @@ impl From<AlgorithmArg> for treewidth::Algorithm {
     }
 }
 
+// TODO: Maybe add more fields to this stuct, such as memory usage, and maybe optimal treewidth if
+// we know it.
 #[derive(Serialize, Deserialize)]
 struct ExperimentResult {
     name: Option<String>,

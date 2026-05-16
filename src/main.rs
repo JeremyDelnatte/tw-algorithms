@@ -3,11 +3,13 @@ use clap::Parser;
 mod cli;
 mod timeout;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // test();
+    // Ok(())
+
     // let n_values = [10, 15, 20];
     // let m_values = [20, 30, 40];
-    
+
     // let n_values = [11, 20];
     // let m_values = [20, 30];
     //
@@ -53,5 +55,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // run_benchmarks_timeout(benchmark_config, timeout_duration).await
 
     // run_benchmarks(benchmark_config)
+
     cli::Cli::parse().run()
 }

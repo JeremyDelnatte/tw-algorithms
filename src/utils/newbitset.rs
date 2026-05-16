@@ -83,6 +83,20 @@ impl NewBitSet {
         }
     }
 
+    pub fn intersection_len(&self, rhs: &NewBitSet) -> usize {
+        match (self, rhs) {
+            (NewBitSet::Small(a), NewBitSet::Small(b)) => (*a & *b).count_ones() as usize,
+            (NewBitSet::Medium(a), NewBitSet::Medium(b)) => (*a & *b).count_ones() as usize,
+            (NewBitSet::Large(a), NewBitSet::Large(b)) => {
+                a.iter()
+                    .zip(b.iter())
+                    .map(|(x, y)| (x & y).count_ones() as usize)
+                    .sum()
+            }
+            _ => panic!("BitSet variants/capacities differ"),
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         match self {
             NewBitSet::Small(bits) => *bits == 0,
@@ -133,8 +147,43 @@ impl NewBitSet {
             },
         }
     }
+
+    // This method is used to shift all bits from max to pos to the right by one position, effectively removing the bit at pos and shifting all higher bits down.
+    pub fn right_shift_from(&mut self, pos: usize) {
+        match self {
+            NewBitSet::Small(bits) => {
+                let mask = (1u64 << pos) - 1;
+                *bits = (*bits & mask) | ((*bits >> 1) & !mask);
+            }
+            NewBitSet::Medium(bits) => {
+                let mask = (1u128 << pos) - 1;
+                *bits = (*bits & mask) | ((*bits >> 1) & !mask);
+            }
+            NewBitSet::Large(blocks) => {
+                let block_idx = pos / 64;
+                let bit_idx = pos % 64;
+
+                if block_idx >= blocks.len() {
+                    return; // No bits to shift
+                }
+
+                // Shift the current block
+                blocks[block_idx] = (blocks[block_idx] & ((1u64 << bit_idx) - 1)) | ((blocks[block_idx] >> 1) & !((1u64 << bit_idx) - 1));
+
+                // Shift subsequent blocks
+                for i in block_idx + 1..blocks.len() {
+                    let carry = blocks[i] & 1; // Get the least significant bit to carry over
+                    blocks[i] >>= 1; // Shift the current block
+                    if carry != 0 {
+                        blocks[i - 1] |= 1u64 << 63; // Set the most significant bit of the previous block if there was a carry
+                    }
+                }
+            }
+        }
+    }
 }
 
+#[derive(Debug, Clone)]
 pub enum BitSetIter<'a> {
     Small(u64),
     Medium(u128),
