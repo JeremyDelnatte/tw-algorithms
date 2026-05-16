@@ -16,12 +16,32 @@ use crate::{
 pub enum HeuristicAlgorithmArg {
     #[value(alias("mf"))]
     MinFill,
+
+    #[value(alias("md"))]
+    MinDegree,
+
+    #[value(alias("mdpf"))]
+    MinDegreePlusFill,
+
+    #[value(alias("mss"))]
+    MinSparsestSubgraph,
+
+    #[value(alias("mfd"))]
+    MinFillDegree,
+
+    #[value(alias("mdf"))]
+    MinDegreeFill,
 }
 
 impl From<HeuristicAlgorithmArg> for tw_algorithms::treewidth::heuristic::HeuristicAlgorithm {
     fn from(arg: HeuristicAlgorithmArg) -> Self {
         match arg {
             HeuristicAlgorithmArg::MinFill => Self::MinFill,
+            HeuristicAlgorithmArg::MinDegree => Self::MinDegree,
+            HeuristicAlgorithmArg::MinDegreePlusFill => Self::MinDegreePlusFill,
+            HeuristicAlgorithmArg::MinSparsestSubgraph => Self::MinSparsestSubgraph,
+            HeuristicAlgorithmArg::MinFillDegree => Self::MinFillDegree,
+            HeuristicAlgorithmArg::MinDegreeFill => Self::MinDegreeFill,
         }
     }
 }
@@ -30,6 +50,11 @@ impl std::fmt::Display for HeuristicAlgorithmArg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             HeuristicAlgorithmArg::MinFill => "min-fill",
+            HeuristicAlgorithmArg::MinDegree => "min-degree",
+            HeuristicAlgorithmArg::MinDegreePlusFill => "min-degree-plus-fill",
+            HeuristicAlgorithmArg::MinSparsestSubgraph => "min-sparsest-subgraph",
+            HeuristicAlgorithmArg::MinFillDegree => "min-fill-degree",
+            HeuristicAlgorithmArg::MinDegreeFill => "min-degree-fill",
         };
         write!(f, "{}", s)
     }
