@@ -86,6 +86,11 @@ pub fn heuristic_treewidth(
     let start_time = std::time::Instant::now();
     let tw = match algorithm {
         HeuristicAlgorithm::MinFill => heuristic::min_fill(&g),
+        HeuristicAlgorithm::MinDegree => heuristic::min_degree(&g),
+        HeuristicAlgorithm::MinDegreePlusFill => heuristic::min_degree_plus_fill(&g),
+        HeuristicAlgorithm::MinSparsestSubgraph => heuristic::min_sparsest_subgraph(&g),
+        HeuristicAlgorithm::MinFillDegree => heuristic::min_fill_degree(&g),
+        HeuristicAlgorithm::MinDegreeFill => heuristic::min_degree_fill(&g),
     };
     let duration = start_time.elapsed();
     Ok((tw, duration))

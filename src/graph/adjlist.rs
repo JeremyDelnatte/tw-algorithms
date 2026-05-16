@@ -210,7 +210,7 @@ impl Graph {
         added_edges
     }
 
-    fn fill_in_count_vertex(&self, v: usize) -> usize {
+    pub fn fill_in_count_vertex(&self, v: usize) -> usize {
         let neighbors = self.neighbors_ref(v).unwrap();
         let num_neighbors = neighbors.len();
 
@@ -231,7 +231,7 @@ impl Graph {
         edges_missing
     }
 
-    pub fn least_fill_in_count_vertex(&self) -> usize {
+    pub fn min_fill_in_count_vertex(&self) -> usize {
         let mut min = self.fill_in_count_vertex(0);
         let mut vertex_min = 0;
 

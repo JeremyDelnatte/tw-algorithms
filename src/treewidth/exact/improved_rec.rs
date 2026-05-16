@@ -1,8 +1,16 @@
 use std::collections::HashSet;
 
 use crate::{
-    graph::{Graph, adjlist, bitset},
-    treewidth::exact::{all_connected_component, all_connected_component_bitset, combinations_bitset, rec}, utils::bitset::BitSet,
+    graph::{Graph, adjlist, bitset, newbitset},
+    treewidth::exact::{
+        all_connected_component,
+        all_connected_component_bitset,
+        all_connected_component_newbitset,
+        combinations_bitset,
+        combinations_newbitset,
+        rec,
+    },
+    utils::{bitset::BitSet, newbitset::NewBitSet},
 };
 
 pub fn treewidth(graph: &Graph) -> usize {
@@ -22,7 +30,13 @@ pub fn treewidth(graph: &Graph) -> usize {
             k + 1
         },
         Graph::FixedBitSet(_) => todo!(),
-        Graph::NewBitSet(_) => todo!(),
+        Graph::NewBitSet(g) => {
+            let mut k = g.n();
+            while treewdith_recursive_newbitset(g, k) {
+                k -= 1;
+            }
+            k + 1
+        }
     }
 }
 
@@ -235,6 +249,126 @@ fn fill_in_graph_bitset(graph: &bitset::Graph, subset: BitSet) -> bitset::Graph 
     new_graph
 }
 
+fn treewdith_recursive_newbitset(graph: &newbitset::Graph, k: usize) -> bool {
+    if graph.n() <= k + 1 {
+        return true;
+    }
+
+    let vertices = NewBitSet::full(graph.n());
+
+    if k <= (0.25 * graph.n() as f64) as usize || k >= (0.4203 * graph.n() as f64) as usize {
+        for subset in combinations_newbitset(&vertices, graph.n(), k + 1) {
+            let complement = vertices.difference(&subset);
+
+            let components = all_connected_component_newbitset(graph, &complement);
+            let max_size = max_size_all_components_newbitset(&components);
+
+            if max_size > (graph.n() - k) / 2 {
+                continue;
+            }
+
+            let mut tbool = true;
+            for component in components {
+                tbool = tbool
+                    && rec::treewdith_recursive_newbitset(
+                        graph,
+                        &NewBitSet::new(graph.n()),
+                        component,
+                    ) <= k;
+            }
+
+            if tbool {
+                return true;
+            }
+        }
+    } else {
+        for subset in combinations_newbitset(
+            &vertices,
+            graph.n(),
+            (0.4203 * (graph.n() as f64)) as usize + 1,
+        ) {
+            let complement = vertices.difference(&subset);
+
+            let components = all_connected_component_newbitset(graph, &complement);
+            let max_size = max_size_all_components_newbitset(&components);
+
+            if max_size > (graph.n() - k) / 2 {
+                continue;
+            }
+
+            let fill_in_graph = fill_in_graph_newbitset(graph, &subset);
+
+            let mut tbool = treewdith_recursive_newbitset(&fill_in_graph, k);
+
+            for component in components {
+                tbool = tbool
+                    && rec::treewdith_recursive_newbitset(
+                        graph,
+                        &NewBitSet::new(graph.n()),
+                        component,
+                    ) <= k;
+            }
+
+            if tbool {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+fn max_size_all_components_newbitset(components: &Vec<NewBitSet>) -> usize {
+    components.iter().map(|c| c.len()).max().unwrap()
+}
+
+fn fill_in_graph_newbitset(graph: &newbitset::Graph, subset: &NewBitSet) -> newbitset::Graph {
+    let new_n = subset.len();
+    let mut new_graph = newbitset::Graph::new(new_n);
+
+    let vertices = NewBitSet::full(graph.n());
+    let complement = vertices.difference(subset);
+
+    let mut components = all_connected_component_newbitset(graph, &complement);
+    let subset_vec: Vec<usize> = subset.to_vec();
+
+    for v in 0..new_n {
+        let v_orig = subset_vec[v];
+
+        for component in &mut components {
+            let Some(neighbors) = graph.neighbors_ref(v_orig) else {
+                continue;
+            };
+
+            for neighbor in neighbors.iter() {
+                if component.contains(neighbor) {
+                    component.insert(v_orig);
+                }
+            }
+        }
+    }
+
+    for v in 0..(new_n - 1) {
+        let v_orig = subset_vec[v];
+        for w in (v + 1)..new_n {
+            let w_orig = subset_vec[w];
+
+            if graph.neighbors_ref(v_orig).unwrap().contains(w_orig) {
+                new_graph.add_edge(v, w);
+                continue;
+            }
+
+            for component in &components {
+                if component.contains(v_orig) && component.contains(w_orig) {
+                    new_graph.add_edge(v, w);
+                }
+            }
+        }
+    }
+
+    new_graph
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -266,6 +400,21 @@ mod tests {
         assert_eq!(treewidth(&g), 2);
 
         let g = Graph::BitSet(bitset::Graph::new_complete(4));
+        assert_eq!(treewidth(&g), 3);
+    }
+
+    #[test]
+    fn test_treewidth_newbitset() {
+        let g = Graph::NewBitSet(newbitset::Graph::new_cycle(3));
+        assert_eq!(treewidth(&g), 2);
+
+        let g = Graph::NewBitSet(newbitset::Graph::new_path(4));
+        assert_eq!(treewidth(&g), 1);
+
+        let g = Graph::NewBitSet(newbitset::Graph::new_cycle(5));
+        assert_eq!(treewidth(&g), 2);
+
+        let g = Graph::NewBitSet(newbitset::Graph::new_complete(4));
         assert_eq!(treewidth(&g), 3);
     }
 

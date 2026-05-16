@@ -37,9 +37,9 @@ impl Graph {
     pub fn to_g6(&self) -> String {
         match self {
             Graph::AdjList(g) => g.to_g6(),
-            Graph::BitSet(g) => unimplemented!(),
-            Graph::FixedBitSet(g) => unimplemented!(),
-            Graph::NewBitSet(g) => unimplemented!(),
+            Graph::BitSet(_) => unimplemented!(),
+            Graph::FixedBitSet(_) => unimplemented!(),
+            Graph::NewBitSet(_) => unimplemented!(),
         }
     }
 

@@ -36,6 +36,25 @@ impl NewBitSet {
         }
     }
 
+    pub fn full(n: usize) -> Self {
+        match n {
+            0 => NewBitSet::Small(0),
+            1..=63 => NewBitSet::Small((1u64 << n) - 1),
+            64 => NewBitSet::Small(u64::MAX),
+            65..=127 => NewBitSet::Medium((1u128 << n) - 1),
+            128 => NewBitSet::Medium(u128::MAX),
+            _ => {
+                let num_blocks = (n + 63) / 64;
+                let mut blocks = vec![u64::MAX; num_blocks];
+                let rem = n % 64;
+                if rem != 0 {
+                    blocks[num_blocks - 1] = (1u64 << rem) - 1;
+                }
+                NewBitSet::Large(blocks)
+            }
+        }
+    }
+
     pub fn from_u64(bits: u64) -> Self {
         NewBitSet::Small(bits)
     }
@@ -92,6 +111,17 @@ impl NewBitSet {
                     .zip(b.iter())
                     .map(|(x, y)| (x & y).count_ones() as usize)
                     .sum()
+            }
+            _ => panic!("BitSet variants/capacities differ"),
+        }
+    }
+
+    pub fn difference(&self, rhs: &NewBitSet) -> NewBitSet {
+        match (self, rhs) {
+            (NewBitSet::Small(a), NewBitSet::Small(b)) => NewBitSet::Small(*a & !*b),
+            (NewBitSet::Medium(a), NewBitSet::Medium(b)) => NewBitSet::Medium(*a & !*b),
+            (NewBitSet::Large(a), NewBitSet::Large(b)) => {
+                NewBitSet::Large(a.iter().zip(b.iter()).map(|(x, y)| x & !y).collect())
             }
             _ => panic!("BitSet variants/capacities differ"),
         }
@@ -268,6 +298,36 @@ impl std::ops::BitOrAssign for NewBitSet {
             (NewBitSet::Large(a), NewBitSet::Large(b)) => {
                 for (x, y) in a.iter_mut().zip(b) {
                     *x |= y;
+                }
+            }
+            _ => panic!("BitSet variants/capacities differ"),
+        }
+    }
+}
+
+impl std::ops::BitOr<&NewBitSet> for &NewBitSet {
+    type Output = NewBitSet;
+
+    fn bitor(self, rhs: &NewBitSet) -> NewBitSet {
+        match (self, rhs) {
+            (NewBitSet::Small(a), NewBitSet::Small(b)) => NewBitSet::Small(*a | *b),
+            (NewBitSet::Medium(a), NewBitSet::Medium(b)) => NewBitSet::Medium(*a | *b),
+            (NewBitSet::Large(a), NewBitSet::Large(b)) => {
+                NewBitSet::Large(a.iter().zip(b.iter()).map(|(x, y)| x | y).collect())
+            }
+            _ => panic!("BitSet variants/capacities differ"),
+        }
+    }
+}
+
+impl std::ops::BitOrAssign<&NewBitSet> for NewBitSet {
+    fn bitor_assign(&mut self, rhs: &NewBitSet) {
+        match (self, rhs) {
+            (NewBitSet::Small(a), NewBitSet::Small(b)) => *a |= *b,
+            (NewBitSet::Medium(a), NewBitSet::Medium(b)) => *a |= *b,
+            (NewBitSet::Large(a), NewBitSet::Large(b)) => {
+                for (x, y) in a.iter_mut().zip(b.iter()) {
+                    *x |= *y;
                 }
             }
             _ => panic!("BitSet variants/capacities differ"),

@@ -354,23 +354,21 @@ fn combinations_bitset(subset: BitSet, k: usize) -> Vec<BitSet> {
     result
 }
 
-fn for_each_combination_fixedbitset<F>(
-    subset: &FixedBitSet,
-    k: usize,
-    mut f: F,
-)
-where
-    F: FnMut(FixedBitSet),
-{
-    let positions: Vec<usize> = subset.ones().collect();
+fn combinations_newbitset(subset: &NewBitSet, n: usize, k: usize) -> Vec<NewBitSet> {
+    let positions = subset.to_vec();
+    let mut result = Vec::new();
 
     for combo in positions.iter().copied().combinations(k) {
-        let mut bs = FixedBitSet::with_capacity(subset.len());
+        let mut bs = NewBitSet::new(n);
+
         for v in combo {
             bs.insert(v);
         }
-        f(bs);
+
+        result.push(bs);
     }
+
+    result
 }
 
 #[cfg(test)]
