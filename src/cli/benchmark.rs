@@ -1,4 +1,8 @@
-use std::{fs::{File, create_dir_all}, io::BufRead, time::Duration};
+use std::{
+    fs::{File, create_dir_all},
+    io::BufRead,
+    time::Duration,
+};
 
 use clap::{ArgGroup, Parser, Subcommand};
 use csv::Writer;
@@ -8,10 +12,8 @@ use tw_algorithms::{graph::adjlist::Graph, treewidth};
 
 use crate::{
     cli::{
-        approximate_treewidth::ApproxAlgorithmArg,
-        compute_treewidth::ExactAlgorithmArg,
-        heuristic_treewidth::HeuristicAlgorithmArg,
-        progress_bar,
+        approximate_treewidth::ApproxAlgorithmArg, compute_treewidth::ExactAlgorithmArg,
+        heuristic_treewidth::HeuristicAlgorithmArg, progress_bar,
     },
     timeout,
 };
@@ -34,10 +36,17 @@ pub struct BenchmarkArgs {
     #[arg(long, value_enum)]
     heuristic_algorithm: Option<HeuristicAlgorithmArg>,
 
-    #[arg(short = 'p', long = "progress-bar", help = "Show progress bars during benchmarking")]
+    #[arg(
+        short = 'p',
+        long = "progress-bar",
+        help = "Show progress bars during benchmarking"
+    )]
     show_progress_bar: bool,
 
-    #[arg(long, help = "Force re-run benchmarks even if results already exist and are valid")]
+    #[arg(
+        long,
+        help = "Force re-run benchmarks even if results already exist and are valid"
+    )]
     force: bool,
 
     #[command(subcommand)]
@@ -58,7 +67,11 @@ struct RandomGraphsArgs {
     #[arg(long, help = "Seed for random graph generation", default_value_t = 42)]
     seed: u64,
 
-    #[arg(long, help = "Number of iterations to run (for averaging)", default_value_t = 100)]
+    #[arg(
+        long,
+        help = "Number of iterations to run (for averaging)",
+        default_value_t = 100
+    )]
     num_iterations: usize,
 
     #[arg(long, help = "Number of vertices in the random graph")]
@@ -70,10 +83,18 @@ struct RandomGraphsArgs {
 
 #[derive(Parser)]
 struct PresetGraphsArgs {
-    #[arg(short = 'f', long, help = "File containing preset graphs (one in g6 format per line)")]
+    #[arg(
+        short = 'f',
+        long,
+        help = "File containing preset graphs (one in g6 format per line)"
+    )]
     graph_file: String,
 
-    #[arg(long, help = "Number of iterations to run each algorithm on each graph (for averaging)", default_value_t = 1)]
+    #[arg(
+        long,
+        help = "Number of iterations to run each algorithm on each graph (for averaging)",
+        default_value_t = 1
+    )]
     num_iterations: usize,
 }
 
@@ -99,7 +120,9 @@ impl From<AlgorithmArg> for treewidth::Algorithm {
         match arg {
             AlgorithmArg::Exact(exact_alg) => treewidth::Algorithm::Exact(exact_alg.into()),
             AlgorithmArg::Approx(approx_alg) => treewidth::Algorithm::Approx(approx_alg.into()),
-            AlgorithmArg::Heuristic(heuristic_alg) => treewidth::Algorithm::Heuristic(heuristic_alg.into()),
+            AlgorithmArg::Heuristic(heuristic_alg) => {
+                treewidth::Algorithm::Heuristic(heuristic_alg.into())
+            }
         }
     }
 }
@@ -112,11 +135,16 @@ struct ExperimentResult {
     graph_g6: String,
     iteration: Option<usize>,
     runtime: u128,
+    allocated_bytes: Option<u64>,
     timeout: bool,
     treewidth: Option<usize>,
 }
 
-pub fn run(args: BenchmarkArgs, with_bitset: bool, timeout: Option<std::time::Duration>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run(
+    args: BenchmarkArgs,
+    with_bitset: bool,
+    timeout: Option<std::time::Duration>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let algorithm_arg = if let Some(exact_alg) = args.exact_algorithm {
         AlgorithmArg::Exact(exact_alg)
     } else if let Some(approx_alg) = args.approximate_algorithm {
@@ -155,7 +183,6 @@ fn benchmark_random_graphs(
     show_progress_bar: bool,
     force: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-
     if !force && verify_benchmark_random_graphs(&args, algorithm, with_bitset)? {
         println!("Benchmark results already exist and are valid, skipping benchmark.");
         return Ok(());
@@ -166,34 +193,35 @@ fn benchmark_random_graphs(
     let num_edges = args.num_edges;
     let seed = args.seed;
 
-    // let dir = match algorithm {
-    //     AlgorithmArg::Exact(_) => "exact",
-    //     AlgorithmArg::Approx(_) => "approx",
-    //     AlgorithmArg::Heuristic(_) => "heuristic",
-    // };
-    //
-    // let dir_path = format!("benchmarks/random_graphs/{}", dir);
     let dir_path = directory_path("random_graphs", algorithm);
     create_dir_all(&dir_path)?;
 
-    let with_bitset_str = if with_bitset { "_bitset" } else { "" };
+    let variant_suffix = benchmark_variant_suffix(with_bitset);
 
-    let file = File::create(format!("{}/{:?}_n{}_m{}_s{}{}.csv", dir_path, algorithm, num_vertices, num_edges, seed, with_bitset_str))?;
+    let file = File::create(format!(
+        "{}/{:?}_n{}_m{}_s{}{}.csv",
+        dir_path, algorithm, num_vertices, num_edges, seed, variant_suffix
+    ))?;
     let mut writer = Writer::from_writer(file);
 
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
 
-    let progress = progress_bar::create_benchmark_progress_bars(
-        show_progress_bar,
-        num_iterations,
-        None,
-    )?;
+    let progress =
+        progress_bar::create_benchmark_progress_bars(show_progress_bar, num_iterations, None)?;
 
     for _ in 0..num_iterations {
         let graph = Graph::generate_random_with_rng(num_vertices, num_edges, &mut rng).to_g6();
 
         progress_bar::start_graph_progress(&progress, &graph, None);
-        run_algorithm(algorithm, &graph, with_bitset, timeout, &mut writer, None, None)?;
+        run_algorithm(
+            algorithm,
+            &graph,
+            with_bitset,
+            timeout,
+            &mut writer,
+            None,
+            None,
+        )?;
         progress_bar::finish_graph_progress(&progress);
     }
 
@@ -211,17 +239,13 @@ fn verify_benchmark_random_graphs(
     let num_edges = args.num_edges;
     let seed = args.seed;
 
-    // let dir = match algorithm {
-    //     AlgorithmArg::Exact(_) => "exact",
-    //     AlgorithmArg::Approx(_) => "approx",
-    //     AlgorithmArg::Heuristic(_) => "heuristic",
-    // };
-    //
-    // let dir_path = format!("benchmarks/random_graphs/{}", dir);
     let dir_path = directory_path("random_graphs", algorithm);
-    let with_bitset_str = if with_bitset { "_bitset" } else { "" };
+    let variant_suffix = benchmark_variant_suffix(with_bitset);
 
-    let file_path = format!("{}/{:?}_n{}_m{}_s{}{}.csv", dir_path, algorithm, num_vertices, num_edges, seed, with_bitset_str);
+    let file_path = format!(
+        "{}/{:?}_n{}_m{}_s{}{}.csv",
+        dir_path, algorithm, num_vertices, num_edges, seed, variant_suffix
+    );
 
     if !std::path::Path::new(&file_path).exists() {
         return Ok(false);
@@ -235,7 +259,8 @@ fn verify_benchmark_random_graphs(
     let mut count = 0;
     for result in reader.deserialize() {
         let record: ExperimentResult = result?;
-        let expected_graph = Graph::generate_random_with_rng(num_vertices, num_edges, &mut rng).to_g6();
+        let expected_graph =
+            Graph::generate_random_with_rng(num_vertices, num_edges, &mut rng).to_g6();
         count += 1;
 
         if record.graph_g6 != expected_graph {
@@ -254,30 +279,28 @@ fn benchmark_preset_graphs(
     show_progress_bar: bool,
     force: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-
     if !force && verify_benchmark_preset_graphs(&args, algorithm, with_bitset)? {
         println!("Benchmark results already exist and are valid, skipping benchmark.");
         return Ok(());
     }
 
     let input_path = std::path::Path::new(&args.graph_file);
-    let filename = input_path.file_name().ok_or("Invalid graph file path")?.to_string_lossy();
+    let filename = input_path
+        .file_name()
+        .ok_or("Invalid graph file path")?
+        .to_string_lossy();
 
     let input_file = std::fs::File::open(input_path)?;
     let reader = std::io::BufReader::new(input_file);
 
-    // let dir = match algorithm {
-    //     AlgorithmArg::Exact(_) => "exact",
-    //     AlgorithmArg::Approx(_) => "approx",
-    //     AlgorithmArg::Heuristic(_) => "heuristic",
-    // };
-    //
-    // let dir_path = format!("benchmarks/preset_graphs/{}", dir);
     let dir_path = directory_path("preset_graphs", algorithm);
     create_dir_all(&dir_path)?;
 
-    let with_bitset_str = if with_bitset { "_bitset" } else { "" };
-    let output_file = File::create(format!("{}/{:?}_{}{}.csv", dir_path, algorithm, filename, with_bitset_str))?;
+    let variant_suffix = benchmark_variant_suffix(with_bitset);
+    let output_file = File::create(format!(
+        "{}/{:?}_{}{}.csv",
+        dir_path, algorithm, filename, variant_suffix
+    ))?;
     let mut writer = Writer::from_writer(output_file);
 
     let lines = reader.lines().collect::<Result<Vec<_>, _>>()?;
@@ -297,10 +320,22 @@ fn benchmark_preset_graphs(
             _ => return Err(format!("Invalid line format: {}", line).into()),
         };
 
-        progress_bar::start_graph_progress(&progress, graph_name.unwrap_or(g6), Some(args.num_iterations));
+        progress_bar::start_graph_progress(
+            &progress,
+            graph_name.unwrap_or(g6),
+            Some(args.num_iterations),
+        );
 
         for iteration in 0..args.num_iterations {
-            run_algorithm(algorithm, g6, with_bitset, timeout, &mut writer, graph_name, Some(iteration))?;
+            run_algorithm(
+                algorithm,
+                g6,
+                with_bitset,
+                timeout,
+                &mut writer,
+                graph_name,
+                Some(iteration),
+            )?;
             progress_bar::inc_iteration_progress(&progress);
         }
         progress_bar::finish_graph_progress(&progress);
@@ -316,18 +351,17 @@ fn verify_benchmark_preset_graphs(
     with_bitset: bool,
 ) -> Result<bool, Box<dyn std::error::Error>> {
     let input_path = std::path::Path::new(&args.graph_file);
-    let filename = input_path.file_name().ok_or("Invalid graph file path")?.to_string_lossy();
+    let filename = input_path
+        .file_name()
+        .ok_or("Invalid graph file path")?
+        .to_string_lossy();
 
-    // let dir = match algorithm {
-    //     AlgorithmArg::Exact(_) => "exact",
-    //     AlgorithmArg::Approx(_) => "approx",
-    //     AlgorithmArg::Heuristic(_) => "heuristic",
-    // };
-    //
-    // let dir_path = format!("benchmarks/preset_graphs/{}", dir);
     let dir_path = directory_path("preset_graphs", algorithm);
-    let with_bitset_str = if with_bitset { "_bitset" } else { "" };
-    let file_path = format!("{}/{:?}_{}{}.csv", dir_path, algorithm, filename, with_bitset_str);
+    let variant_suffix = benchmark_variant_suffix(with_bitset);
+    let file_path = format!(
+        "{}/{:?}_{}{}.csv",
+        dir_path, algorithm, filename, variant_suffix
+    );
 
     if !std::path::Path::new(&file_path).exists() {
         return Ok(false);
@@ -356,7 +390,7 @@ fn verify_benchmark_preset_graphs(
                 let record: ExperimentResult = result?;
 
                 if record.graph_g6 != g6 {
-                    return  Ok(false);
+                    return Ok(false);
                 }
             } else {
                 return Ok(false);
@@ -377,6 +411,18 @@ fn directory_path(benchmark_type: &str, algorithm: AlgorithmArg) -> String {
     dir_path
 }
 
+fn benchmark_variant_suffix(with_bitset: bool) -> String {
+    let mut suffix = String::new();
+    if with_bitset {
+        suffix.push_str("_bitset");
+    }
+
+    #[cfg(feature = "measure-memory")]
+    suffix.push_str("_mem");
+
+    suffix
+}
+
 fn run_algorithm(
     algorithm: AlgorithmArg,
     graph_g6: &str,
@@ -388,24 +434,29 @@ fn run_algorithm(
 ) -> Result<Duration, Box<dyn std::error::Error>> {
     let mut timeout_flag = false;
 
-    let (tw, runtime) = if let Some(timeout) = timeout_opt {
-        match timeout::compute_or_approximate_treewidth(graph_g6, algorithm, with_bitset, timeout) {
-            Ok(result) => (Some(result.0), result.1),
+    let (tw, runtime, allocated_bytes) = if let Some(timeout) = timeout_opt {
+        match timeout::compute_or_approximate_treewidth(
+            graph_g6,
+            algorithm,
+            with_bitset,
+            timeout,
+        ) {
+            Ok((tw, runtime, allocated_bytes)) => (Some(tw), runtime, allocated_bytes),
             Err(timeout::TreewidthProcessError::Timeout { timeout }) => {
                 timeout_flag = true;
-                (None, timeout)
-            },
+                (None, timeout, None)
+            }
             Err(e) => return Err(e.into()),
         }
     } else {
-        let result = treewidth::compute_or_approximate_treewidth(graph_g6, algorithm.into(), with_bitset)?;
-        (Some(result.0), result.1)
+        compute_treewidth_with_optional_memory(graph_g6, algorithm, with_bitset)?
     };
 
     let experiment_result = ExperimentResult {
         graph_g6: graph_g6.to_string(),
         iteration,
         runtime: runtime.as_nanos(),
+        allocated_bytes,
         timeout: timeout_flag,
         treewidth: tw,
         name: name.map(|s| s.to_string()),
@@ -413,4 +464,28 @@ fn run_algorithm(
 
     output.serialize(experiment_result)?;
     Ok(runtime)
+}
+
+#[cfg(feature = "measure-memory")]
+fn compute_treewidth_with_optional_memory(
+    graph_g6: &str,
+    algorithm: AlgorithmArg,
+    with_bitset: bool,
+) -> Result<(Option<usize>, Duration, Option<u64>), Box<dyn std::error::Error>> {
+    let _profiler = dhat::Profiler::builder().testing().build();
+    let result =
+        treewidth::compute_or_approximate_treewidth(graph_g6, algorithm.into(), with_bitset)?;
+    let stats = dhat::HeapStats::get();
+    Ok((Some(result.0), result.1, Some(stats.total_bytes)))
+}
+
+#[cfg(not(feature = "measure-memory"))]
+fn compute_treewidth_with_optional_memory(
+    graph_g6: &str,
+    algorithm: AlgorithmArg,
+    with_bitset: bool,
+) -> Result<(Option<usize>, Duration, Option<u64>), Box<dyn std::error::Error>> {
+    let result =
+        treewidth::compute_or_approximate_treewidth(graph_g6, algorithm.into(), with_bitset)?;
+    Ok((Some(result.0), result.1, None))
 }

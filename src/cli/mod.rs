@@ -3,16 +3,14 @@ use std::time::Duration;
 use clap::{Parser, Subcommand};
 
 use crate::cli::{
-    approximate_treewidth::ApproximateTreewidthArgs,
-    benchmark::BenchmarkArgs,
-    compute_treewidth::ComputeTreewidthArgs,
-    heuristic_treewidth::HeuristicTreewidthArgs,
+    approximate_treewidth::ApproximateTreewidthArgs, benchmark::BenchmarkArgs,
+    compute_treewidth::ComputeTreewidthArgs, heuristic_treewidth::HeuristicTreewidthArgs,
 };
 
-pub mod compute_treewidth;
 pub mod approximate_treewidth;
-pub mod heuristic_treewidth;
 pub mod benchmark;
+pub mod compute_treewidth;
+pub mod heuristic_treewidth;
 pub mod progress_bar;
 
 #[derive(Parser)]
@@ -41,10 +39,18 @@ pub struct Cli {
 impl Cli {
     pub fn run(self) -> Result<(), Box<dyn std::error::Error>> {
         match self.command {
-            Command::ComputeTreewidth(args) => compute_treewidth::run(args, self.with_bitset, self.timeout),
-            Command::ApproximateTreewidth(args) => approximate_treewidth::run(args, self.with_bitset, self.timeout),
-            Command::HeuristicTreewidth(args) => heuristic_treewidth::run(args, self.with_bitset, self.timeout),
-            Command::Benchmark(args) => benchmark::run(args, self.with_bitset, self.timeout),
+            Command::ComputeTreewidth(args) => {
+                compute_treewidth::run(args, self.with_bitset, self.timeout)
+            }
+            Command::ApproximateTreewidth(args) => {
+                approximate_treewidth::run(args, self.with_bitset, self.timeout)
+            }
+            Command::HeuristicTreewidth(args) => {
+                heuristic_treewidth::run(args, self.with_bitset, self.timeout)
+            }
+            Command::Benchmark(args) => {
+                benchmark::run(args, self.with_bitset, self.timeout)
+            }
         }
     }
 }
@@ -76,9 +82,7 @@ fn parse_duration(s: &str) -> Result<Duration, String> {
         return Err("timeout cannot be empty".to_string());
     }
 
-    let split_at = s
-        .find(|c: char| !c.is_ascii_digit())
-        .unwrap_or(s.len());
+    let split_at = s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len());
 
     let number = &s[..split_at];
     let unit = &s[split_at..];

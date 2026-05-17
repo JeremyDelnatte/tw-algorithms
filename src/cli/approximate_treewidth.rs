@@ -105,7 +105,7 @@ fn approximate_treewidth_single(
         );
     }
 
-    let (tw, duration) = if let Some(timeout) = timeout_opt {
+    let (tw, duration, allocated_bytes) = if let Some(timeout) = timeout_opt {
         match timeout::approximate_treewidth(g6, algorithm.clone(), with_bitset, timeout) {
             Ok(result) => result,
             Err(TreewidthProcessError::Timeout { timeout }) => {
@@ -124,7 +124,7 @@ fn approximate_treewidth_single(
             Err(e) => return Err(e.into()),
         }
     } else {
-        treewidth::approximate_treewidth(g6, algorithm.clone().into(), with_bitset)?
+        approximate_treewidth_with_optional_memory(g6, algorithm.clone(), with_bitset)?
     };
 
     if let Some(optimal_tw) = optimal_treewidth {
@@ -140,11 +140,15 @@ fn approximate_treewidth_single(
 
     if !output_json {
         println!("Approximated treewidth: {}, Time taken: {:.2?}", tw, duration);
+        if let Some(bytes) = allocated_bytes {
+            println!("Allocated bytes: {}", bytes);
+        }
     } else {
         let output = serde_json::json!({
             "status": "ok",
             "treewidth": tw,
             "duration_ns": duration.as_nanos(),
+            "allocated_bytes": allocated_bytes,
         });
 
         println!("{}", output);
@@ -173,11 +177,14 @@ fn approximate_treewidth_file(
 
     let mut num_timeouts = 0;
     let instant = std::time::Instant::now();
+    let mut total_duration_ns: u128 = 0;
+    let mut total_allocated_bytes: u128 = 0;
+    let mut allocated_samples = 0usize;
 
     for line in reader.lines() {
         let g6 = line?;
 
-        let (tw, _) = if let Some(timeout) = timeout_opt {
+        let (tw, duration, allocated_bytes) = if let Some(timeout) = timeout_opt {
             match timeout::approximate_treewidth(&g6, algorithm.clone(), with_bitset, timeout) {
                 Ok(result) => result,
                 Err(TreewidthProcessError::Timeout { .. }) => {
@@ -187,7 +194,7 @@ fn approximate_treewidth_file(
                 Err(e) => return Err(e.into()),
             }
         } else {
-            treewidth::approximate_treewidth(&g6, algorithm.clone().into(), with_bitset)?
+            approximate_treewidth_with_optional_memory(&g6, algorithm.clone(), with_bitset)?
         };
 
         if let Some(optimal_tw) = optimal_treewidth {
@@ -201,6 +208,12 @@ fn approximate_treewidth_file(
             }
         }
 
+        total_duration_ns += duration.as_nanos();
+        if let Some(bytes) = allocated_bytes {
+            total_allocated_bytes += bytes as u128;
+            allocated_samples += 1;
+        }
+
         if !output_json {
             print!("\rProcessed {} graphs", count);
             stdout().flush()?;
@@ -208,14 +221,33 @@ fn approximate_treewidth_file(
         count += 1;
     }
 
+    let avg_duration_ns = if count > 0 {
+        Some(total_duration_ns / count as u128)
+    } else {
+        None
+    };
+    let avg_allocated_bytes = if allocated_samples > 0 {
+        Some((total_allocated_bytes / allocated_samples as u128) as u64)
+    } else {
+        None
+    };
+
     if timeout_opt.is_some() {
         if !output_json {
             println!("\nAll {} graphs processed successfully, but {} timed out, in {:.2?}", count, num_timeouts, instant.elapsed());
+            if let Some(avg) = avg_duration_ns {
+                println!("Average time per graph: {:.2?}", Duration::from_nanos(avg as u64));
+            }
+            if let Some(avg) = avg_allocated_bytes {
+                println!("Average allocated bytes per graph: {}", avg);
+            }
         } else {
             let output = serde_json::json!({
                 "status": "ok",
                 "num_graphs": count,
                 "num_timeouts": num_timeouts,
+                "avg_duration_ns": avg_duration_ns,
+                "avg_allocated_bytes": avg_allocated_bytes,
             });
 
             println!("{}", output);
@@ -229,15 +261,45 @@ fn approximate_treewidth_file(
             "\nAll {} graphs processed successfully in {:.2?}",
             count, elapsed
         );
+        if let Some(avg) = avg_duration_ns {
+            println!("Average time per graph: {:.2?}", Duration::from_nanos(avg as u64));
+        }
+        if let Some(avg) = avg_allocated_bytes {
+            println!("Average allocated bytes per graph: {}", avg);
+        }
     } else {
         let output = serde_json::json!({
             "status": "ok",
             "num_graphs": count,
-            "duration_ns": elapsed.as_nanos()
+            "duration_ns": elapsed.as_nanos(),
+            "avg_duration_ns": avg_duration_ns,
+            "avg_allocated_bytes": avg_allocated_bytes,
         });
 
         println!("{}", output);
     }
 
     Ok(())
+}
+
+#[cfg(feature = "measure-memory")]
+fn approximate_treewidth_with_optional_memory(
+    g6: &str,
+    algorithm: ApproxAlgorithmArg,
+    with_bitset: bool,
+) -> Result<(usize, Duration, Option<u64>), Box<dyn std::error::Error>> {
+    let _profiler = dhat::Profiler::builder().testing().build();
+    let result = treewidth::approximate_treewidth(g6, algorithm.into(), with_bitset)?;
+    let stats = dhat::HeapStats::get();
+    Ok((result.0, result.1, Some(stats.total_bytes)))
+}
+
+#[cfg(not(feature = "measure-memory"))]
+fn approximate_treewidth_with_optional_memory(
+    g6: &str,
+    algorithm: ApproxAlgorithmArg,
+    with_bitset: bool,
+) -> Result<(usize, Duration, Option<u64>), Box<dyn std::error::Error>> {
+    let result = treewidth::approximate_treewidth(g6, algorithm.into(), with_bitset)?;
+    Ok((result.0, result.1, None))
 }

@@ -40,6 +40,8 @@ impl TreewidthProcessError {
 struct TreewidthProcessOutput {
     treewidth: usize,
     duration_ns: u64,
+    #[serde(default)]
+    allocated_bytes: Option<u64>,
 }
 
 pub fn compute_or_approximate_treewidth(
@@ -47,7 +49,7 @@ pub fn compute_or_approximate_treewidth(
     algorithm: AlgorithmArg,
     with_bitset: bool,
     timeout: Duration,
-) -> Result<(usize, Duration), TreewidthProcessError> {
+) -> Result<(usize, Duration, Option<u64>), TreewidthProcessError> {
     match algorithm {
         AlgorithmArg::Exact(exact_alg) => compute_treewidth(g6, exact_alg, with_bitset, timeout),
         AlgorithmArg::Approx(approx_alg) => approximate_treewidth(g6, approx_alg, with_bitset, timeout),
@@ -60,7 +62,7 @@ pub fn compute_treewidth(
     algorithm: ExactAlgorithmArg,
     with_bitset: bool,
     timeout: Duration,
-) -> Result<(usize, Duration), TreewidthProcessError> {
+) -> Result<(usize, Duration, Option<u64>), TreewidthProcessError> {
     run_command_timeout("compute-treewidth", g6, &algorithm.to_string(), with_bitset, timeout)
 }
 
@@ -69,7 +71,7 @@ pub fn approximate_treewidth(
     algorithm: ApproxAlgorithmArg,
     with_bitset: bool,
     timeout: Duration,
-) -> Result<(usize, Duration), TreewidthProcessError> {
+) -> Result<(usize, Duration, Option<u64>), TreewidthProcessError> {
     run_command_timeout("approximate-treewidth", g6, &algorithm.to_string(), with_bitset, timeout)
 }
 
@@ -78,7 +80,7 @@ pub fn heuristic_treewidth(
     algorithm: HeuristicAlgorithmArg,
     with_bitset: bool,
     timeout: Duration,
-) -> Result<(usize, Duration), TreewidthProcessError> {
+) -> Result<(usize, Duration, Option<u64>), TreewidthProcessError> {
     run_command_timeout("heuristic-treewidth", g6, &algorithm.to_string(), with_bitset, timeout)
 }
 
@@ -88,7 +90,7 @@ fn run_command_timeout(
     algorithm: &str,
     with_bitset: bool,
     timeout: Duration,
-) -> Result<(usize, Duration), TreewidthProcessError> {
+) -> Result<(usize, Duration, Option<u64>), TreewidthProcessError> {
     let executable = std::env::current_exe()
         .map_err(TreewidthProcessError::other)?;
 
@@ -137,6 +139,7 @@ fn run_command_timeout(
                 return Ok((
                     parsed.treewidth,
                     Duration::from_nanos(parsed.duration_ns),
+                    parsed.allocated_bytes,
                 ));
             }
 
