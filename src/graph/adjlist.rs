@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use std::{collections::HashSet, fs::File, io::{self, BufRead, BufReader}};
 
-use rand::{RngExt, SeedableRng, rngs::StdRng};
+use rand::{RngExt, rngs::StdRng};
 
 use crate::utils::g6::{self, get_edges, get_size, to_edges, to_size};
 
@@ -9,7 +9,7 @@ use crate::utils::g6::{self, get_edges, get_size, to_edges, to_size};
 pub struct Graph {
     n: usize,
     m: usize,
-    adjency: Vec<Vec<usize>>, // TODO: Test with HashSet
+    adjency: Vec<Vec<usize>>,
 }
 
 impl Graph {

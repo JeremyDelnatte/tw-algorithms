@@ -31,8 +31,8 @@ pub fn approx_treewidth(graph: &graph::Graph) -> usize {
 
             unreachable!("The treewidth of a graph with n vertices is at most n-1, so this loop should have found a solution (k = n should alaways succeed)");
         },
-        graph::Graph::NewBitSet(g) => {
-            let mut subset = NewBitSet::new(g.n());
+        graph::Graph::BitSet(g) => {
+            let mut subset = BitSet::new(g.n());
             for i in 0..g.n() {
                 subset.insert(i);
             }
@@ -42,14 +42,13 @@ pub fn approx_treewidth(graph: &graph::Graph) -> usize {
             for k in 1..=g.n() {
                 let mut triangulated = g.clone();
 
-                if treewidth_recursive_newbitset(&mut triangulated, &subset, &NewBitSet::new(g.n()), k, &mut max_bag) {
+                if treewidth_recursive_bitset(&mut triangulated, &subset, &BitSet::new(g.n()), k, &mut max_bag) {
                     return max_bag - 1;
                 }
             }
 
             unreachable!("The treewidth of a graph with n vertices is at most n-1, so this loop should have found a solution (k = n should alaways succeed)");
         },
-        _ => unimplemented!(),
     }
 }
 
@@ -456,21 +455,21 @@ fn vout(i: usize) -> usize { 2 * i + 1 }
 
 // TODO: Need to check the implementation
 use crate::{
-    graph::newbitset,
-    utils::newbitset::NewBitSet,
+    graph::bitset,
+    utils::bitset::BitSet,
 };
 
 #[derive(Debug, Clone)]
 pub struct SeparatorBitSet {
-    pub sep: NewBitSet,
-    pub c1: NewBitSet,
-    pub c2: NewBitSet,
+    pub sep: BitSet,
+    pub c1: BitSet,
+    pub c2: BitSet,
 }
 
-pub fn treewidth_recursive_newbitset(
-    graph: &mut newbitset::Graph,
-    subset: &NewBitSet,
-    w: &NewBitSet,
+pub fn treewidth_recursive_bitset(
+    graph: &mut bitset::Graph,
+    subset: &BitSet,
+    w: &BitSet,
     k: usize,
     max_bag: &mut usize,
 ) -> bool {
@@ -497,7 +496,7 @@ pub fn treewidth_recursive_newbitset(
         }
     }
 
-    let Some(separator) = two_third_vertex_separator_newbitset(graph, subset, &w_bis, k) else {
+    let Some(separator) = two_third_vertex_separator_bitset(graph, subset, &w_bis, k) else {
         return false;
     };
 
@@ -513,7 +512,7 @@ pub fn treewidth_recursive_newbitset(
         subset1.insert(v);
     }
 
-    if !treewidth_recursive_newbitset(graph, &subset1, &w1, k, max_bag) {
+    if !treewidth_recursive_bitset(graph, &subset1, &w1, k, max_bag) {
         return false;
     }
 
@@ -529,7 +528,7 @@ pub fn treewidth_recursive_newbitset(
         subset2.insert(v);
     }
 
-    if !treewidth_recursive_newbitset(graph, &subset2, &w2, k, max_bag) {
+    if !treewidth_recursive_bitset(graph, &subset2, &w2, k, max_bag) {
         return false;
     }
 
@@ -549,10 +548,10 @@ pub fn treewidth_recursive_newbitset(
     true
 }
 
-pub fn two_third_vertex_separator_newbitset(
-    graph: &newbitset::Graph,
-    subset: &NewBitSet,
-    w: &NewBitSet,
+pub fn two_third_vertex_separator_bitset(
+    graph: &bitset::Graph,
+    subset: &BitSet,
+    w: &BitSet,
     k: usize,
 ) -> Option<SeparatorBitSet> {
     let size_w1 = (w.len() + 1) / 2;
@@ -599,7 +598,7 @@ pub fn two_third_vertex_separator_newbitset(
     for w1_refs in w_vec.iter().combinations(size_w1) {
         let w1: Vec<usize> = w1_refs.into_iter().copied().collect();
 
-        let mut w1_set = NewBitSet::new(graph.n());
+        let mut w1_set = BitSet::new(graph.n());
         for &v in &w1 {
             w1_set.insert(v);
         }
@@ -645,7 +644,7 @@ pub fn two_third_vertex_separator_newbitset(
                 add_arc(&mut w2_edges, &mut w2_cap, vout(u), sink_in, inf);
             }
 
-            let separator = minimum_vertex_separator_newbitset(
+            let separator = minimum_vertex_separator_bitset(
                 flow_n,
                 &w2_edges,
                 &w2_cap,
@@ -671,7 +670,7 @@ pub fn two_third_vertex_separator_newbitset(
     None
 }
 
-pub fn minimum_vertex_separator_newbitset(
+pub fn minimum_vertex_separator_bitset(
     n: usize,
     edges: &[(usize, usize)],
     capacities: &[usize],
@@ -686,9 +685,9 @@ pub fn minimum_vertex_separator_newbitset(
         return None;
     };
 
-    let mut separator = NewBitSet::new(graph_n);
-    let mut c1 = NewBitSet::new(graph_n);
-    let mut c2 = NewBitSet::new(graph_n);
+    let mut separator = BitSet::new(graph_n);
+    let mut c1 = BitSet::new(graph_n);
+    let mut c2 = BitSet::new(graph_n);
 
     for &v in subset {
         let mapped = node_map[&v];

@@ -2,7 +2,7 @@ use serde::Serialize;
 use strum::EnumIter;
 
 use crate::
-    graph::{Graph, adjlist, newbitset}
+    graph::{Graph, adjlist, bitset}
 ;
 
 #[derive(EnumIter, Serialize, Debug, Clone, Copy)]
@@ -27,7 +27,7 @@ fn min_heuristic(g: &adjlist::Graph, vertex_selector: impl Fn(&adjlist::Graph) -
     max_degree
 }
 
-fn min_heuristic_bitset(g: &newbitset::Graph, vertex_selector: impl Fn(&newbitset::Graph) -> usize) -> usize {
+fn min_heuristic_bitset(g: &bitset::Graph, vertex_selector: impl Fn(&bitset::Graph) -> usize) -> usize {
     let mut g = g.clone();
     let mut max_degree = 0;
 
@@ -42,16 +42,14 @@ fn min_heuristic_bitset(g: &newbitset::Graph, vertex_selector: impl Fn(&newbitse
 pub fn min_fill(graph: &Graph) -> usize {
     match graph {
         Graph::AdjList(g) => min_heuristic(g, |g| g.min_fill_in_count_vertex()),
-        Graph::NewBitSet(g) => min_heuristic_bitset(g, |g| g.min_fill_in_count_vertex()),
-        _ => todo!("Remove other graph types and update this function accordingly"),
+        Graph::BitSet(g) => min_heuristic_bitset(g, |g| g.min_fill_in_count_vertex()),
     }
 }
 
 pub fn min_degree(graph: &Graph) -> usize {
     match graph {
         Graph::AdjList(g) => min_heuristic(g, |g| g.min_degree_vertex()),
-        Graph::NewBitSet(g) => min_heuristic_bitset(g, |g| g.min_degree_vertex()),
-        _ => todo!("Remove other graph types and update this function accordingly"),
+        Graph::BitSet(g) => min_heuristic_bitset(g, |g| g.min_degree_vertex()),
     }
 }
 
@@ -71,7 +69,7 @@ pub fn min_degree_plus_fill(graph: &Graph) -> usize {
 
             vertex_min
         }),
-        Graph::NewBitSet(g) => min_heuristic_bitset(g, |g| {
+        Graph::BitSet(g) => min_heuristic_bitset(g, |g| {
             let mut min = g.degree(0) + g.fill_in_count_vertex(0);
             let mut vertex_min = 0;
 
@@ -85,7 +83,6 @@ pub fn min_degree_plus_fill(graph: &Graph) -> usize {
 
             vertex_min
         }),
-        _ => todo!("Remove other graph types and update this function accordingly"),
     }
 }
 
@@ -105,7 +102,7 @@ pub fn min_sparsest_subgraph(graph: &Graph) -> usize {
 
             vertex_min
         }),
-        Graph::NewBitSet(g) => min_heuristic_bitset(g, |g| {
+        Graph::BitSet(g) => min_heuristic_bitset(g, |g| {
             let mut min = g.fill_in_count_vertex(0) - g.degree(0);
             let mut vertex_min = 0;
 
@@ -119,7 +116,6 @@ pub fn min_sparsest_subgraph(graph: &Graph) -> usize {
 
             vertex_min
         }),
-        _ => todo!("Remove other graph types and update this function accordingly"),
     }
 }
 
@@ -145,7 +141,7 @@ pub fn min_fill_degree(graph: &Graph) -> usize {
 
             min_vertex
         }),
-        Graph::NewBitSet(g) => min_heuristic_bitset(g, |g| {
+        Graph::BitSet(g) => min_heuristic_bitset(g, |g| {
             let score = |v: usize| {
                 let n = g.n() as f64;
                 g.degree(v) as f64 + g.fill_in_count_vertex(v) as f64 / (n * n)
@@ -165,7 +161,6 @@ pub fn min_fill_degree(graph: &Graph) -> usize {
 
             min_vertex
         }),
-        _ => todo!("Remove other graph types and update this function accordingly"),
     }
 }
 
@@ -191,7 +186,7 @@ pub fn min_degree_fill(graph: &Graph) -> usize {
 
             min_vertex
         }),
-        Graph::NewBitSet(g) => min_heuristic_bitset(g, |g| {
+        Graph::BitSet(g) => min_heuristic_bitset(g, |g| {
             let score = |v: usize| {
                 let n = g.n() as f64;
                 g.fill_in_count_vertex(v) as f64 + g.degree(v) as f64 / n
@@ -211,6 +206,5 @@ pub fn min_degree_fill(graph: &Graph) -> usize {
 
             min_vertex
         }),
-        _ => todo!("Remove other graph types and update this function accordingly"),
     }
 }

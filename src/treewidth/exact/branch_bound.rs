@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
 
-use crate::{graph::{Graph, adjlist, newbitset}, treewidth::heuristic::min_fill, utils::newbitset::NewBitSet};
+use crate::{graph::{Graph, adjlist, bitset}, treewidth::heuristic::min_fill, utils::bitset::BitSet};
 
 pub fn treewidth(graph: &Graph) -> usize {
     let upper_bound = min_fill(graph);
@@ -26,7 +26,7 @@ pub fn treewidth(graph: &Graph) -> usize {
                 &mut HashMap::new(),
             )
         }
-        Graph::NewBitSet(g) => {
+        Graph::BitSet(g) => {
             let lower_bound = minor_min_width_bitset(g);
 
             if lower_bound == upper_bound {
@@ -44,7 +44,6 @@ pub fn treewidth(graph: &Graph) -> usize {
                 &mut HashMap::new(),
             )
         },
-        _ => panic!("Unsupported graph type"),
     }
 }
 
@@ -171,14 +170,14 @@ fn branch_bound_sub(
 }
 
 fn branch_bound_sub_bitset(
-    graph: &newbitset::Graph,
+    graph: &bitset::Graph,
     g: usize,
     f: usize,
     mut upper_bound: usize,
     last_vertex: Option<usize>,
-    last_vertex_neighbors: Option<&NewBitSet>,
+    last_vertex_neighbors: Option<&BitSet>,
     previous_child_eliminated: &mut HashSet<(usize, usize)>, // For Theorem 6.1
-    ancestor_child_eliminated_neighbors: &mut HashMap<usize, Vec<NewBitSet>>, // For Theorem 6.2
+    ancestor_child_eliminated_neighbors: &mut HashMap<usize, Vec<BitSet>>, // For Theorem 6.2
 ) -> usize {
     if graph.n() < 2 {
         return std::cmp::min(upper_bound, f);
@@ -305,7 +304,7 @@ fn minor_min_width(g: &adjlist::Graph) -> usize {
     }
 }
 
-fn minor_min_width_bitset(g: &newbitset::Graph) -> usize {
+fn minor_min_width_bitset(g: &bitset::Graph) -> usize {
     let mut lb = 0;
     let mut g = g.clone();
 
@@ -347,7 +346,7 @@ fn reduce_graph(
 }
 
 fn reduce_graph_bitset(
-    graph: &mut newbitset::Graph,
+    graph: &mut bitset::Graph,
     lower_bound: usize,
     mut g: usize,
     mut f: usize,
@@ -379,7 +378,7 @@ fn edge_addition(g: &mut adjlist::Graph, upper_bound: usize) {
     }
 }
 
-fn edge_addition_bitset(g: &mut newbitset::Graph, upper_bound: usize) {
+fn edge_addition_bitset(g: &mut bitset::Graph, upper_bound: usize) {
     for u in 0..(g.n() - 1) {
         for v in (u + 1)..g.n() {
             let neighbors_u = g.neighbors_ref(u).unwrap();
@@ -405,7 +404,7 @@ fn find_simplicial_vertex(g: &adjlist::Graph, lower_bound: usize) -> Option<usiz
     None
 }
 
-fn find_simplicial_vertex_bitset(g: &newbitset::Graph, lower_bound: usize) -> Option<usize> {
+fn find_simplicial_vertex_bitset(g: &bitset::Graph, lower_bound: usize) -> Option<usize> {
     for v in 0..g.n() {
         if is_simplicial_or_almost_simplicial_bitset(g, v, lower_bound) {
             return Some(v);
@@ -427,7 +426,7 @@ fn find_all_simplicial_vertices(g: &adjlist::Graph, lower_bound: usize) -> Vec<u
     simplicial_vertices
 }
 
-fn find_all_simplicial_vertices_bitset(g: &newbitset::Graph, lower_bound: usize) -> Vec<usize> {
+fn find_all_simplicial_vertices_bitset(g: &bitset::Graph, lower_bound: usize) -> Vec<usize> {
     let mut simplicial_vertices = Vec::new();
 
     for v in 0..g.n() {
@@ -494,7 +493,7 @@ fn is_simplicial_or_almost_simplicial(
 }
 
 fn is_simplicial_or_almost_simplicial_bitset(
-    g: &newbitset::Graph,
+    g: &bitset::Graph,
     v: usize,
     lower_bound: usize,
 ) -> bool {

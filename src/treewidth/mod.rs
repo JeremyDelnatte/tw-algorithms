@@ -37,7 +37,7 @@ pub fn compute_treewidth(
     with_bitset: bool,
 ) -> Result<(usize, Duration), Box<dyn std::error::Error>> {
     let g = if with_bitset {
-        graph::Graph::NewBitSet(graph::newbitset::Graph::from_g6(g6)?)
+        graph::Graph::BitSet(graph::bitset::Graph::from_g6(g6)?)
     } else {
         graph::Graph::AdjList(adjlist::Graph::from_g6(g6)?)
     };
@@ -61,7 +61,7 @@ pub fn approximate_treewidth(
     let g = if !with_bitset {
         graph::Graph::AdjList(adjlist::Graph::from_g6(g6)?)
     } else {
-        graph::Graph::NewBitSet(graph::newbitset::Graph::from_g6(g6)?)
+        graph::Graph::BitSet(graph::bitset::Graph::from_g6(g6)?)
     };
 
     let start_time = std::time::Instant::now();
@@ -78,7 +78,7 @@ pub fn heuristic_treewidth(
     with_bitset: bool,
 ) -> Result<(usize, Duration), Box<dyn std::error::Error>> {
     let g = if with_bitset {
-        graph::Graph::NewBitSet(graph::newbitset::Graph::from_g6(g6)?)
+        graph::Graph::BitSet(graph::bitset::Graph::from_g6(g6)?)
     } else {
         graph::Graph::AdjList(adjlist::Graph::from_g6(g6)?)
     };
