@@ -328,7 +328,7 @@ fn benchmark_preset_graphs(
         );
 
         for iteration in 0..args.num_iterations {
-            run_algorithm(
+            let duration = run_algorithm(
                 algorithm,
                 g6,
                 with_bitset,
@@ -338,6 +338,10 @@ fn benchmark_preset_graphs(
                 Some(iteration),
             )?;
             progress_bar::inc_iteration_progress(&progress);
+
+            if let Some(timeout) = timeout && duration >= timeout {
+                break;
+            }
         }
         progress_bar::finish_graph_progress(&progress);
     }
