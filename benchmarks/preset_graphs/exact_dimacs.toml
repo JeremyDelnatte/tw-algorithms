@@ -1,0 +1,26 @@
+[[benchmarks]]
+name = "rec_dimacs"
+benchmark = "preset-graphs"
+exact_algorithm = "rec"
+graph_file = "instances/dimacs/dimacs.g6"
+num_iterations = 5
+bitset = true
+timeout = "1h"
+
+[[benchmarks]]
+name = "dp_dimacs"
+benchmark = "preset-graphs"
+exact_algorithm = "dp"
+graph_file = "instances/dimacs/dimacs.g6"
+num_iterations = 5
+bitset = true
+timeout = "1h"
+
+[[benchmarks]]
+name = "bb_dimacs"
+benchmark = "preset-graphs"
+exact_algorithm = "bb"
+graph_file = "instances/dimacs/dimacs.g6"
+num_iterations = 5
+bitset = true
+timeout = "1h"
