@@ -1,0 +1,191 @@
+[[benchmarks]]
+name = "rec_hog_n10"
+benchmark = "preset-graphs"
+exact_algorithm = "rec"
+graph_file = "instances/house_of_graphs/graphs_n10.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "dp_hog_n10"
+benchmark = "preset-graphs"
+exact_algorithm = "dp"
+graph_file = "instances/house_of_graphs/graphs_n10.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "bb_hog_n10"
+benchmark = "preset-graphs"
+exact_algorithm = "bb"
+graph_file = "instances/house_of_graphs/graphs_n10.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "rec_hog_n9"
+benchmark = "preset-graphs"
+exact_algorithm = "rec"
+graph_file = "instances/house_of_graphs/graphs_n9.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "dp_hog_n9"
+benchmark = "preset-graphs"
+exact_algorithm = "dp"
+graph_file = "instances/house_of_graphs/graphs_n9.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "bb_hog_n9"
+benchmark = "preset-graphs"
+exact_algorithm = "bb"
+graph_file = "instances/house_of_graphs/graphs_n9.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "rec_hog_n8"
+benchmark = "preset-graphs"
+exact_algorithm = "rec"
+graph_file = "instances/house_of_graphs/graphs_n8.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "dp_hog_n8"
+benchmark = "preset-graphs"
+exact_algorithm = "dp"
+graph_file = "instances/house_of_graphs/graphs_n8.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "bb_hog_n8"
+benchmark = "preset-graphs"
+exact_algorithm = "bb"
+graph_file = "instances/house_of_graphs/graphs_n8.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "rec_hog_n7"
+benchmark = "preset-graphs"
+exact_algorithm = "rec"
+graph_file = "instances/house_of_graphs/graphs_n7.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "dp_hog_n7"
+benchmark = "preset-graphs"
+exact_algorithm = "dp"
+graph_file = "instances/house_of_graphs/graphs_n7.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "bb_hog_n7"
+benchmark = "preset-graphs"
+exact_algorithm = "bb"
+graph_file = "instances/house_of_graphs/graphs_n7.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "rec_hog_n6"
+benchmark = "preset-graphs"
+exact_algorithm = "rec"
+graph_file = "instances/house_of_graphs/graphs_n6.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "dp_hog_n6"
+benchmark = "preset-graphs"
+exact_algorithm = "dp"
+graph_file = "instances/house_of_graphs/graphs_n6.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "bb_hog_n6"
+benchmark = "preset-graphs"
+exact_algorithm = "bb"
+graph_file = "instances/house_of_graphs/graphs_n6.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "rec_hog_n5"
+benchmark = "preset-graphs"
+exact_algorithm = "rec"
+graph_file = "instances/house_of_graphs/graphs_n5.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "dp_hog_n5"
+benchmark = "preset-graphs"
+exact_algorithm = "dp"
+graph_file = "instances/house_of_graphs/graphs_n5.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "bb_hog_n5"
+benchmark = "preset-graphs"
+exact_algorithm = "bb"
+graph_file = "instances/house_of_graphs/graphs_n5.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "rec_hog_n4"
+benchmark = "preset-graphs"
+exact_algorithm = "rec"
+graph_file = "instances/house_of_graphs/graphs_n4.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "dp_hog_n4"
+benchmark = "preset-graphs"
+exact_algorithm = "dp"
+graph_file = "instances/house_of_graphs/graphs_n4.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "bb_hog_n4"
+benchmark = "preset-graphs"
+exact_algorithm = "bb"
+graph_file = "instances/house_of_graphs/graphs_n4.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "rec_hog_n3"
+benchmark = "preset-graphs"
+exact_algorithm = "rec"
+graph_file = "instances/house_of_graphs/graphs_n3.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "dp_hog_n3"
+benchmark = "preset-graphs"
+exact_algorithm = "dp"
+graph_file = "instances/house_of_graphs/graphs_n3.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "bb_hog_n3"
+benchmark = "preset-graphs"
+exact_algorithm = "bb"
+graph_file = "instances/house_of_graphs/graphs_n3.g6"
+num_iterations = 10
+bitset = true
