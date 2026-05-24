@@ -4,7 +4,7 @@ use clap::{ArgGroup, Parser, ValueEnum};
 use serde_json::json;
 use tw_algorithms::treewidth;
 
-use crate::{cli::InputType, timeout::{self, TreewidthProcessError}};
+use crate::{cli::InputType, timeout::{self, MemoryStats, TreewidthProcessError}};
 
 #[derive(Clone, ValueEnum, Debug, Copy)]
 pub enum ExactAlgorithmArg {
@@ -121,7 +121,7 @@ fn compute_treewidth_single(
         );
     }
 
-    let (tw, duration, allocated_bytes) = if let Some(timeout) = timeout_opt {
+    let (tw, duration, memory_stats) = if let Some(timeout) = timeout_opt {
         match timeout::compute_treewidth(g6, algorithm, with_bitset, timeout) {
             Ok(result) => result,
             Err(TreewidthProcessError::Timeout { timeout }) => {
@@ -143,7 +143,6 @@ fn compute_treewidth_single(
     } else {
         compute_treewidth_with_optional_memory(g6, algorithm, with_bitset)?
     };
-
     if let Some(expected_tw) = expected_treewidth
         && tw != expected_tw
     {
@@ -153,15 +152,21 @@ fn compute_treewidth_single(
 
     if !output_json {
         println!("Computed treewidth: {}, Time taken: {:.2?}", tw, duration);
-        if let Some(bytes) = allocated_bytes {
-            println!("Allocated bytes: {}", bytes);
+        if let Some((allocated_bytes, peak_bytes)) = memory_stats {
+            println!("Allocated bytes: {}", allocated_bytes);
+            println!("Peak bytes: {}", peak_bytes);
         }
     } else {
+        let (allocated_bytes, peak_bytes) = match memory_stats {
+            Some((allocated_bytes, peak_bytes)) => (Some(allocated_bytes), Some(peak_bytes)),
+            None => (None, None),
+        };
         let output = json!({
             "status": "ok",
             "treewidth": tw,
             "duration_ns": duration.as_nanos(),
             "allocated_bytes": allocated_bytes,
+            "peak_bytes": peak_bytes,
         });
 
         println!("{}", output);
@@ -192,12 +197,13 @@ fn compute_treewidth_file(
     let mut num_timeouts = 0;
     let mut total_duration_ns: u128 = 0;
     let mut total_allocated_bytes: u128 = 0;
-    let mut allocated_samples = 0usize;
+    let mut total_peak_bytes: u128 = 0;
+    let mut memory_samples = 0usize;
 
     for line in reader.lines() {
         let g6 = line?;
 
-        let (tw, duration, allocated_bytes) = if let Some(timeout) = timeout_opt {
+        let (tw, duration, memory_stats) = if let Some(timeout) = timeout_opt {
             match timeout::compute_treewidth(&g6, algorithm.clone(), with_bitset, timeout) {
                 Ok(result) => result,
                 Err(TreewidthProcessError::Timeout { .. }) => {
@@ -209,7 +215,6 @@ fn compute_treewidth_file(
         } else {
             compute_treewidth_with_optional_memory(&g6, algorithm.clone(), with_bitset)?
         };
-
         if let Some(expected_tw) = expected_treewidth
             && tw != expected_tw
         {
@@ -218,9 +223,10 @@ fn compute_treewidth_file(
         }
 
         total_duration_ns += duration.as_nanos();
-        if let Some(bytes) = allocated_bytes {
-            total_allocated_bytes += bytes as u128;
-            allocated_samples += 1;
+        if let Some((allocated_bytes, peak_bytes)) = memory_stats {
+            total_allocated_bytes += allocated_bytes as u128;
+            total_peak_bytes += peak_bytes as u128;
+            memory_samples += 1;
         }
 
         if !output_json {
@@ -235,8 +241,13 @@ fn compute_treewidth_file(
     } else {
         None
     };
-    let avg_allocated_bytes = if allocated_samples > 0 {
-        Some((total_allocated_bytes / allocated_samples as u128) as u64)
+    let avg_allocated_bytes = if memory_samples > 0 {
+        Some((total_allocated_bytes / memory_samples as u128) as u64)
+    } else {
+        None
+    };
+    let avg_peak_bytes = if memory_samples > 0 {
+        Some((total_peak_bytes / memory_samples as u128) as u64)
     } else {
         None
     };
@@ -250,13 +261,17 @@ fn compute_treewidth_file(
             if let Some(avg) = avg_allocated_bytes {
                 println!("Average allocated bytes per graph: {}", avg);
             }
+            if let Some(avg) = avg_peak_bytes {
+                println!("Average peak bytes per graph: {}", avg);
+            }
         } else {
             let output = json!({
                 "num_graphs": count,
                 "num_timeouts": num_timeouts,
                 "duration_ns": instant.elapsed().as_nanos(),
                 "avg_duration_ns": avg_duration_ns,
-                "avg_allocated_bytes": avg_allocated_bytes
+                "avg_allocated_bytes": avg_allocated_bytes,
+                "avg_peak_bytes": avg_peak_bytes
             });
 
             println!("{}", output);
@@ -276,12 +291,16 @@ fn compute_treewidth_file(
         if let Some(avg) = avg_allocated_bytes {
             println!("Average allocated bytes per graph: {}", avg);
         }
+        if let Some(avg) = avg_peak_bytes {
+            println!("Average peak bytes per graph: {}", avg);
+        }
     } else {
         let output = json!({
             "num_graphs": count,
             "duration_ns": elapsed.as_nanos(),
             "avg_duration_ns": avg_duration_ns,
-            "avg_allocated_bytes": avg_allocated_bytes
+            "avg_allocated_bytes": avg_allocated_bytes,
+            "avg_peak_bytes": avg_peak_bytes
         });
 
         println!("{}", output);
@@ -295,11 +314,11 @@ fn compute_treewidth_with_optional_memory(
     g6: &str,
     algorithm: ExactAlgorithmArg,
     with_bitset: bool,
-) -> Result<(usize, Duration, Option<u64>), Box<dyn std::error::Error>> {
+) -> Result<(usize, Duration, MemoryStats), Box<dyn std::error::Error>> {
     let _profiler = dhat::Profiler::builder().testing().build();
     let result = treewidth::compute_treewidth(g6, algorithm.into(), with_bitset)?;
     let stats = dhat::HeapStats::get();
-    Ok((result.0, result.1, Some(stats.total_bytes)))
+    Ok((result.0, result.1, Some((stats.total_bytes, stats.max_bytes as u64))))
 }
 
 #[cfg(not(feature = "measure-memory"))]
@@ -307,7 +326,7 @@ fn compute_treewidth_with_optional_memory(
     g6: &str,
     algorithm: ExactAlgorithmArg,
     with_bitset: bool,
-) -> Result<(usize, Duration, Option<u64>), Box<dyn std::error::Error>> {
+) -> Result<(usize, Duration, MemoryStats), Box<dyn std::error::Error>> {
     let result = treewidth::compute_treewidth(g6, algorithm.into(), with_bitset)?;
     Ok((result.0, result.1, None))
 }

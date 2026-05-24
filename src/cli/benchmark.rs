@@ -15,7 +15,7 @@ use crate::{
         approximate_treewidth::ApproxAlgorithmArg, compute_treewidth::ExactAlgorithmArg,
         heuristic_treewidth::HeuristicAlgorithmArg, progress_bar,
     },
-    timeout,
+    timeout::{self, MemoryStats},
 };
 
 #[derive(Parser)]
@@ -136,6 +136,7 @@ struct ExperimentResult {
     iteration: Option<usize>,
     runtime: u128,
     allocated_bytes: Option<u64>,
+    peak_bytes: Option<u64>,
     timeout: bool,
     treewidth: Option<usize>,
 }
@@ -434,14 +435,14 @@ fn run_algorithm(
 ) -> Result<Duration, Box<dyn std::error::Error>> {
     let mut timeout_flag = false;
 
-    let (tw, runtime, allocated_bytes) = if let Some(timeout) = timeout_opt {
+    let (tw, runtime, memory_stats) = if let Some(timeout) = timeout_opt {
         match timeout::compute_or_approximate_treewidth(
             graph_g6,
             algorithm,
             with_bitset,
             timeout,
         ) {
-            Ok((tw, runtime, allocated_bytes)) => (Some(tw), runtime, allocated_bytes),
+            Ok((tw, runtime, memory_stats)) => (Some(tw), runtime, memory_stats),
             Err(timeout::TreewidthProcessError::Timeout { timeout }) => {
                 timeout_flag = true;
                 (None, timeout, None)
@@ -451,12 +452,17 @@ fn run_algorithm(
     } else {
         compute_treewidth_with_optional_memory(graph_g6, algorithm, with_bitset)?
     };
+    let (allocated_bytes, peak_bytes) = match memory_stats {
+        Some((allocated_bytes, peak_bytes)) => (Some(allocated_bytes), Some(peak_bytes)),
+        None => (None, None),
+    };
 
     let experiment_result = ExperimentResult {
         graph_g6: graph_g6.to_string(),
         iteration,
         runtime: runtime.as_nanos(),
         allocated_bytes,
+        peak_bytes,
         timeout: timeout_flag,
         treewidth: tw,
         name: name.map(|s| s.to_string()),
@@ -471,12 +477,12 @@ fn compute_treewidth_with_optional_memory(
     graph_g6: &str,
     algorithm: AlgorithmArg,
     with_bitset: bool,
-) -> Result<(Option<usize>, Duration, Option<u64>), Box<dyn std::error::Error>> {
+) -> Result<(Option<usize>, Duration, MemoryStats), Box<dyn std::error::Error>> {
     let _profiler = dhat::Profiler::builder().testing().build();
     let result =
         treewidth::compute_or_approximate_treewidth(graph_g6, algorithm.into(), with_bitset)?;
     let stats = dhat::HeapStats::get();
-    Ok((Some(result.0), result.1, Some(stats.total_bytes)))
+    Ok((Some(result.0), result.1, Some((stats.total_bytes, stats.max_bytes as u64))))
 }
 
 #[cfg(not(feature = "measure-memory"))]
@@ -484,7 +490,7 @@ fn compute_treewidth_with_optional_memory(
     graph_g6: &str,
     algorithm: AlgorithmArg,
     with_bitset: bool,
-) -> Result<(Option<usize>, Duration, Option<u64>), Box<dyn std::error::Error>> {
+) -> Result<(Option<usize>, Duration, MemoryStats), Box<dyn std::error::Error>> {
     let result =
         treewidth::compute_or_approximate_treewidth(graph_g6, algorithm.into(), with_bitset)?;
     Ok((Some(result.0), result.1, None))
