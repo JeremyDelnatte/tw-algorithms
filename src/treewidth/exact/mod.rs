@@ -174,21 +174,24 @@ fn all_connected_component_bitset(
     components
 }
 
-fn combinations_bitset(subset: &BitSet, n: usize, k: usize) -> Vec<BitSet> {
-    let positions = subset.to_vec();
-    let mut result = Vec::new();
+fn combinations_bitset(
+    subset: &BitSet,
+    n: usize,
+    k: usize,
+) -> impl Iterator<Item = BitSet> {
+    subset
+        .to_vec()
+        .into_iter()
+        .combinations(k)
+        .map(move |combo| {
+            let mut bs = BitSet::new(n);
 
-    for combo in positions.iter().copied().combinations(k) {
-        let mut bs = BitSet::new(n);
+            for v in combo {
+                bs.insert(v);
+            }
 
-        for v in combo {
-            bs.insert(v);
-        }
-
-        result.push(bs);
-    }
-
-    result
+            bs
+        })
 }
 
 #[cfg(test)]
