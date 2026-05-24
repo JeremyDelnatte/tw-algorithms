@@ -8,7 +8,7 @@
       "m": 20,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "bb_n10_m30",
@@ -18,7 +18,7 @@
       "m": 30,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "bb_n10_m40",
@@ -28,7 +28,7 @@
       "m": 40,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "bb_n15_m20",
@@ -38,7 +38,7 @@
       "m": 20,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "bb_n15_m30",
@@ -48,7 +48,7 @@
       "m": 30,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "bb_n15_m40",
@@ -58,7 +58,7 @@
       "m": 40,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "bb_n20_m20",
@@ -68,7 +68,7 @@
       "m": 20,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "bb_n20_m30",
@@ -78,7 +78,7 @@
       "m": 30,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "bb_n20_m40",
@@ -88,7 +88,7 @@
       "m": 40,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "dp_n10_m20",
@@ -98,7 +98,7 @@
       "m": 20,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "dp_n10_m30",
@@ -108,7 +108,7 @@
       "m": 30,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "dp_n10_m40",
@@ -118,7 +118,7 @@
       "m": 40,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "dp_n15_m20",
@@ -128,7 +128,7 @@
       "m": 20,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "dp_n15_m30",
@@ -138,7 +138,7 @@
       "m": 30,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "dp_n15_m40",
@@ -148,7 +148,7 @@
       "m": 40,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "dp_n20_m20",
@@ -158,7 +158,7 @@
       "m": 20,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "dp_n20_m30",
@@ -168,7 +168,7 @@
       "m": 30,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "dp_n20_m40",
@@ -178,7 +178,7 @@
       "m": 40,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "rec_n10_m20",
@@ -188,7 +188,7 @@
       "m": 20,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "rec_n10_m30",
@@ -198,7 +198,7 @@
       "m": 30,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "rec_n10_m40",
@@ -208,7 +208,7 @@
       "m": 40,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "rec_n15_m20",
@@ -218,7 +218,7 @@
       "m": 20,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "rec_n15_m30",
@@ -228,7 +228,7 @@
       "m": 30,
       "num_iterations": 100,
       "bitset": true,
-      "seed": 42,
+      "seed": 42
     },
     {
       "name": "rec_n15_m40",
@@ -239,7 +239,7 @@
       "num_iterations": 100,
       "bitset": true,
       "seed": 42,
-      "timeout": "1m",
+      "timeout": "1m"
     },
     {
       "name": "rec_n20_m20",
@@ -250,7 +250,7 @@
       "num_iterations": 10,
       "bitset": true,
       "seed": 42,
-      "timeout": "10m",
+      "timeout": "10m"
     },
     {
       "name": "rec_n20_m30",
@@ -261,7 +261,7 @@
       "num_iterations": 10,
       "bitset": true,
       "seed": 42,
-      "timeout": "10m",
+      "timeout": "10m"
     },
     {
       "name": "rec_n20_m40",
@@ -272,7 +272,7 @@
       "num_iterations": 10,
       "bitset": true,
       "seed": 42,
-      "timeout": "10m",
+      "timeout": "10m"
     }
   ]
 }
