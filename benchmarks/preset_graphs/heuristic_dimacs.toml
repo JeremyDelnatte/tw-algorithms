@@ -1,0 +1,47 @@
+[[benchmarks]]
+name = "mf_dimacs"
+benchmark = "preset-graphs"
+approximate_algorithm = "mf"
+graph_file = "instances/dimacs/dimacs.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "md_dimacs"
+benchmark = "preset-graphs"
+approximate_algorithm = "md"
+graph_file = "instances/dimacs/dimacs.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "mdpf_dimacs"
+benchmark = "preset-graphs"
+approximate_algorithm = "mdpf"
+graph_file = "instances/dimacs/dimacs.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "mss_dimacs"
+benchmark = "preset-graphs"
+approximate_algorithm = "mss"
+graph_file = "instances/dimacs/dimacs.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "mfd_dimacs"
+benchmark = "preset-graphs"
+approximate_algorithm = "mfd"
+graph_file = "instances/dimacs/dimacs.g6"
+num_iterations = 10
+bitset = true
+
+[[benchmarks]]
+name = "mdf_dimacs"
+benchmark = "preset-graphs"
+approximate_algorithm = "mdf"
+graph_file = "instances/dimacs/dimacs.g6"
+num_iterations = 10
+bitset = true
