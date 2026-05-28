@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
     graph::{self, adjlist},
     treewidth::{
-        approx::{ApproxAlgorithm, four_approx},
+        approx::{ApproxAlgorithm, four_approx, four_half_approx},
         exact::{ExactAlgorithm, branch_bound, dynamic_prog, improved_rec, rec},
         heuristic::HeuristicAlgorithm,
     },
@@ -67,6 +67,7 @@ pub fn approximate_treewidth(
     let start_time = std::time::Instant::now();
     let tw = match algorithm {
         ApproxAlgorithm::FourApprox => four_approx::approx_treewidth(&g),
+        ApproxAlgorithm::FourHalfApprox => four_half_approx::approx_treewidth(&g),
     };
     let duration = start_time.elapsed();
     Ok((tw, duration))

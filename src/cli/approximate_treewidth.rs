@@ -9,12 +9,16 @@ use crate::{cli::InputType, timeout::{self, MemoryStats, TreewidthProcessError}}
 pub enum ApproxAlgorithmArg {
     #[value(alias("4apx"))]
     FourApprox,
+
+    #[value(alias("4.5apx"))]
+    FourHalfApprox,
 }
 
 impl From<ApproxAlgorithmArg> for tw_algorithms::treewidth::approx::ApproxAlgorithm {
     fn from(arg: ApproxAlgorithmArg) -> Self {
         match arg {
             ApproxAlgorithmArg::FourApprox => Self::FourApprox,
+            ApproxAlgorithmArg::FourHalfApprox => Self::FourHalfApprox,
         }
     }
 }
@@ -23,6 +27,7 @@ impl std::fmt::Display for ApproxAlgorithmArg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             ApproxAlgorithmArg::FourApprox => "four-approx",
+            ApproxAlgorithmArg::FourHalfApprox => "four-half-approx",
         };
         write!(f, "{}", s)
     }
