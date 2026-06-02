@@ -200,7 +200,7 @@ pub fn one_half_vertex_separator_bitset(
         );
 
         if let Some(separator) = separator {
-            if separator.sep.len() <= k
+            if separator.sep.len() <= 3 * k / 2
                 && !separator.c1.is_empty()
                 && !separator.c2.is_empty()
             {
