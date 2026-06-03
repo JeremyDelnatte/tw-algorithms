@@ -1,8 +1,0 @@
-[[benchmarks]]
-name = "4apx_dimacs"
-benchmark = "preset-graphs"
-approximate_algorithm = "4apx"
-graph_file = "instances/dimacs/dimacs.g6"
-num_iterations = 5
-bitset = true
-timeout = "30m"
