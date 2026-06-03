@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use std::{collections::HashSet, fs::File, io::{self, BufRead, BufReader}};
 
 use rand::{RngExt, rngs::StdRng};
@@ -331,7 +330,6 @@ impl Graph {
     }
 
     pub fn from_file(file_path: &str) -> io::Result<Graph> {
-        // let file_path = format!("graphs/{}", file_path);
         let file = match File::open(file_path) {
             Ok(file) => file,
             Err(e) => return Err(e),
@@ -443,74 +441,4 @@ mod tests {
 
         assert_eq!(g.min_degree_neighbor(1), 0);
     }
-
-
-    // #[test]
-    // fn test_graph_equality() {
-    //     let mut g1 = Graph::new(3);
-    //     g1.add_edge(0, 1);
-    //     g1.add_edge(1, 2);
-    //
-    //     let mut g2 = Graph::new(3);
-    //     g2.add_edge(0, 1);
-    //     g2.add_edge(1, 2);
-    //
-    //     let mut g3 = Graph::new(3);
-    //     g3.add_edge(0, 2);
-    //     g3.add_edge(1, 2);
-    //
-    //     assert_eq!(g1, g2);
-    //     assert_ne!(g1, g3);
-    // }
 }
-
-// impl PartialEq for Graph {
-//     fn eq(&self, other: &Self) -> bool {
-//         if self.n != other.n || self.m != other.m {
-//             return false;
-//         }
-//
-//         // let num_neighbors_vertices: HashMap<usize, Vec<usize>> = self.adjency.iter()
-//         //     .enumerate()
-//         //     .map(|(i, neighbors)| (i, neighbors.len()))
-//         //     .fold(HashMap::new(), |mut acc, (i, len)| {
-//         //         acc.entry(len).or_insert(Vec::new()).push(i);
-//         //         acc
-//         //     });
-//         //
-//         // 
-//         // true
-//
-//         // for permutation in (0..graph.n()).permutations(graph.n()) {
-//         //     let mut matched = true;
-//         //
-//         //     for i in 0..graph.n() {
-//         //         let mapped_i = permutation[i];
-//         //         let self_neighbors: Vec<usize> = match self.neighbors(i) {
-//         //             Some(neighbors) => neighbors.iter().map(|&v| permutation[v]).collect(),
-//         //             None => Vec::new(),
-//         //         };
-//         //         let other_neighbors: Vec<usize> = match other.neighbors(mapped_i) {
-//         //             Some(neighbors) => neighbors.clone(),
-//         //             None => Vec::new(),
-//         //         };
-//         //
-//         //         let mut self_neighbors_sorted = self_neighbors.clone();
-//         //         self_neighbors_sorted.sort_unstable();
-//         //         let mut other_neighbors_sorted = other_neighbors.clone();
-//         //         other_neighbors_sorted.sort_unstable();
-//         //
-//         //         if self_neighbors_sorted != other_neighbors_sorted {
-//         //             matched = false;
-//         //             break;
-//         //         }
-//         //     }
-//         //
-//         //     if matched {
-//         //         return true;
-//         //     }
-//         // }
-//     }
-// }
-//
-// impl Eq for Graph {}

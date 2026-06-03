@@ -290,23 +290,4 @@ mod tests {
         let g = Graph::BitSet(bitset::Graph::new_complete(4));
         assert_eq!(treewidth(&g), 3);
     }
-
-    // TODO:
-    // #[test]
-    // fn test_fill_in_graph() {
-    //     let mut g = adjlist::Graph::new(5);
-    //     g.add_edge(0, 1);
-    //     g.add_edge(1, 2);
-    //     g.add_edge(3, 4);
-    //
-    //     let subset: HashSet<usize> = vec![0, 1, 2].into_iter().collect();
-    //     let filled_graph = fill_in_graph(&g, &subset);
-    //
-    //     let mut expected_graph = adjlist::Graph::new(3);
-    //     expected_graph.add_edge(0, 1);
-    //     expected_graph.add_edge(1, 2);
-    //     expected_graph.add_edge(0, 2); // Filled edge
-    //
-    //     assert_eq!(filled_graph, expected_graph);
-    // }
 }

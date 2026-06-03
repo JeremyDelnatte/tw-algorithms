@@ -67,12 +67,6 @@ fn graph_from_dimacs_file(file_path: &str) -> io::Result<Graph> {
 }
 
 fn main() -> io::Result<()> {
-    // let graph = graph_from_dimacs_file("instances/dimacs/queen5_5.col")?;
-    // println!("{:?}", graph);
-    // println!("Number of vertices: {}", graph.n());
-    // println!("Number of edges: {}", graph.m());
-    // println!("g6: {}", graph.to_g6());
-
     let dir_path = "instances/dimacs";
     let output_path = "instances/dimacs/dimacs.g6";
 

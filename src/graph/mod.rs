@@ -36,13 +36,4 @@ impl Graph {
             Graph::BitSet(_) => unimplemented!(),
         }
     }
-
-    // TODO: 
-    // pub fn generate_random_with_rng(n: usize, m: usize) -> Self {
-    //     if n <= Bits::BITS as usize {
-    //         Graph::BitSet(bitset::Graph::generate_random(n, m))
-    //     } else {
-    //         Graph::AdjList(adjlist::Graph::generate_random(n, m))
-    //     }
-    // }
 }
