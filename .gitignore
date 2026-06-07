@@ -11,4 +11,5 @@
 *.py
 *.csv
 *.md
+!README.md
 benchmarks/
