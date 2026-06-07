@@ -1,3 +1,5 @@
+//! Provides exact, approximation, and heuristic treewidth algorithms.
+
 use std::time::Duration;
 
 use crate::{
@@ -9,16 +11,25 @@ use crate::{
     },
 };
 
-pub mod exact;
 pub mod approx;
+pub mod exact;
 pub mod heuristic;
 
+/// A treewidth algorithm selected from the exact, approximation, or heuristic families.
 pub enum Algorithm {
+    /// An exact algorithm that returns the optimal treewidth.
     Exact(ExactAlgorithm),
+
+    /// An approximation algorithm that returns a bounded approximation of the treewidth.
     Approx(ApproxAlgorithm),
+
+    /// A heuristic algorithm that returns an upper bound on the treewidth without any guarantee.
     Heuristic(HeuristicAlgorithm),
 }
 
+/// Computes or approximates the treewidth of a graph6 input graph using the selected algorithm.
+///
+/// The returned duration measures only the algorithm execution after parsing the graph.
 pub fn compute_or_approximate_treewidth(
     g6: &str,
     algorithm: Algorithm,
@@ -31,6 +42,9 @@ pub fn compute_or_approximate_treewidth(
     }
 }
 
+/// Computes the exact treewidth of a graph6 input graph using the selected exact algorithm.
+///
+/// The returned duration measures only the algorithm execution after parsing the graph.
 pub fn compute_treewidth(
     g6: &str,
     algorithm: ExactAlgorithm,
@@ -53,6 +67,9 @@ pub fn compute_treewidth(
     Ok((tw, duration))
 }
 
+/// Approximates the treewidth of a graph6 input graph using the selected approximation algorithm.
+///
+/// The returned duration measures only the algorithm execution after parsing the graph.
 pub fn approximate_treewidth(
     g6: &str,
     algorithm: ApproxAlgorithm,
@@ -73,6 +90,9 @@ pub fn approximate_treewidth(
     Ok((tw, duration))
 }
 
+/// Computes a heuristic treewidth upper bound for a graph6 input graph using the selected heuristic.
+///
+/// The returned duration measures only the heuristic execution after parsing the graph.
 pub fn heuristic_treewidth(
     g6: &str,
     algorithm: HeuristicAlgorithm,

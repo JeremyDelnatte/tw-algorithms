@@ -1,10 +1,15 @@
+//! Utilities for displaying benchmark progress bars. The progress bars track graph-level progress
+//! and optional per-graph iteration progress.
+
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 
+/// Progress bars used while running benchmark scenarios.
 pub struct BenchmarkProgressBars {
     graph_pb: ProgressBar,
     iteration_pb: Option<ProgressBar>,
 }
 
+/// Creates progress bars for graph-level progress and optional per-graph iterations.
 pub fn create_benchmark_progress_bars(
     show_progress: bool,
     num_graphs: usize,
@@ -51,6 +56,7 @@ pub fn create_benchmark_progress_bars(
     })
 }
 
+/// Starts progress reporting for a graph.
 pub fn start_graph_progress(
     progress: &BenchmarkProgressBars,
     graph_label: &str,
@@ -68,24 +74,25 @@ pub fn start_graph_progress(
 
     progress.graph_pb.set_message(graph_label);
 
-    if let (Some(iteration_pb), Some(num_iterations)) =
-        (&progress.iteration_pb, num_iterations)
-    {
+    if let (Some(iteration_pb), Some(num_iterations)) = (&progress.iteration_pb, num_iterations) {
         iteration_pb.reset();
         iteration_pb.set_length(num_iterations as u64);
     }
 }
 
+/// Increments the per-graph iteration progress bar.
 pub fn inc_iteration_progress(progress: &BenchmarkProgressBars) {
     if let Some(iteration_pb) = &progress.iteration_pb {
         iteration_pb.inc(1);
     }
 }
 
+/// Marks the current graph as finished.
 pub fn finish_graph_progress(progress: &BenchmarkProgressBars) {
     progress.graph_pb.inc(1);
 }
 
+/// Finishes all benchmark progress bars.
 pub fn finish_benchmark_progress(progress: &BenchmarkProgressBars) {
     progress.graph_pb.finish_with_message("done");
 

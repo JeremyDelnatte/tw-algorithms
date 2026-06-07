@@ -1,7 +1,14 @@
+//! A dynamic-programming exact treewidth algorithm.
+
 use std::collections::{HashMap, HashSet};
 
-use crate::{graph::{Graph, adjlist, bitset}, treewidth::exact::{compute_q, compute_q_bitset}, utils::{bitset::BitSet}};
+use crate::{
+    graph::{Graph, adjlist, bitset},
+    treewidth::exact::{compute_q, compute_q_bitset},
+    utils::bitset::BitSet,
+};
 
+/// Computes the exact treewidth using dynamic programming algorithm.
 pub fn treewidth(graph: &Graph) -> usize {
     match graph {
         Graph::AdjList(g) => treewidth_vec(g),
@@ -9,7 +16,7 @@ pub fn treewidth(graph: &Graph) -> usize {
     }
 }
 
-
+// Computes the exact treewidth using dynamic programming algorithm for adjacency-list graphs.
 fn treewidth_vec(graph: &adjlist::Graph) -> usize {
     let mut pred: HashMap<Vec<bool>, usize> = HashMap::new();
     pred.insert(vec![false; graph.n()], 0);
@@ -67,6 +74,7 @@ fn treewidth_vec(graph: &adjlist::Graph) -> usize {
     *pred.values().next().unwrap()
 }
 
+// Computes the exact treewidth using dynamic programming algorithm for bitset-based graphs.
 fn treewidth_bitset(graph: &bitset::Graph) -> usize {
     let mut pred: HashMap<BitSet, usize> = HashMap::new();
     pred.insert(BitSet::new(graph.n()), 0);

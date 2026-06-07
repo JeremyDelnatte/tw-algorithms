@@ -1,9 +1,17 @@
+//! A branch-and-bound exact treewidth algorithm. It combines heuristic upper bounds, minor-based
+//! lower bounds, and pruning rules to search for the optimal width.
+
 use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
 
-use crate::{graph::{Graph, adjlist, bitset}, treewidth::heuristic::min_fill, utils::bitset::BitSet};
+use crate::{
+    graph::{Graph, adjlist, bitset},
+    treewidth::heuristic::min_fill,
+    utils::bitset::BitSet,
+};
 
+/// Computes the exact treewidth using branch-and-bound algorithm.
 pub fn treewidth(graph: &Graph) -> usize {
     let upper_bound = min_fill(graph);
 
@@ -43,10 +51,11 @@ pub fn treewidth(graph: &Graph) -> usize {
                 &mut HashSet::new(),
                 &mut HashMap::new(),
             )
-        },
+        }
     }
 }
 
+// Recursive function for the branch-and-bound algorithm.
 fn branch_bound_sub(
     graph: &adjlist::Graph,
     g: usize,
@@ -82,8 +91,7 @@ fn branch_bound_sub(
         }
 
         // let neighbors = graph.neighbors_ref(v).unwrap().iter().cloned().collect();
-        let neighbors = graph.neighbors_ref(v).unwrap(); // NOTE: May be faster to use a vector
-        // directly instead of a HashSet here, but need to benchmark.
+        let neighbors = graph.neighbors_ref(v).unwrap();
 
         // For Theorem 6.2 - Slower for small graphs, but will probably help with larger graphs.
         let neighbors_set: HashSet<usize> = neighbors.iter().cloned().collect();
@@ -119,7 +127,8 @@ fn branch_bound_sub(
             previous_child_eliminated.insert((lv, v));
         }
 
-        // edge_addition(&mut new_graph, upper_bound); // NOTE: A lot slower with the edge addition rule.
+        // NOTE: Seems to be a bit slower with the edge addition rule.
+        // edge_addition(&mut new_graph, upper_bound);
 
         let new_g = std::cmp::max(g, graph.degree(v));
         let lower_bound = minor_min_width(&new_graph);
@@ -134,6 +143,7 @@ fn branch_bound_sub(
             vertex_elim_simplicial_vertices.insert((v, simplicial));
         }
 
+        // NOTE: This improves performance a lot for bigger graphs.
         let (new_g, new_f) = reduce_graph(&mut new_graph, lower_bound, new_g, new_f);
 
         if new_f < upper_bound {
@@ -150,15 +160,6 @@ fn branch_bound_sub(
         }
     }
 
-    // TODO: Since i push, i can probably have a more efficient way to remove the last pushed element here instead of using retain, which will be slower.
-    // For Theorem 6.2
-    // for (v, neighbors) in child_eliminated_neighbors {
-    //     ancestor_child_eliminated_neighbors
-    //         .entry(v)
-    //         .or_insert_with(Vec::new)
-    //         .retain(|s| s != &neighbors);
-    // }
-
     for v in child_eliminated {
         ancestor_child_eliminated_neighbors
             .entry(v)
@@ -169,6 +170,7 @@ fn branch_bound_sub(
     return upper_bound;
 }
 
+// Recursive function for the branch-and-bound algorithm for bitset-based graphs.
 fn branch_bound_sub_bitset(
     graph: &bitset::Graph,
     g: usize,
@@ -273,13 +275,14 @@ fn branch_bound_sub_bitset(
     for v in child_eliminated {
         ancestor_child_eliminated_neighbors
             .entry(v)
-            .or_insert_with(Vec::new) // Should always exist.
+            .or_insert_with(Vec::new) // NOTE: Should always exist.
             .pop();
     }
 
     upper_bound
 }
 
+// Computes a minor-based lower bound on the treewidth of the graph.
 fn minor_min_width(g: &adjlist::Graph) -> usize {
     let mut lb = 0;
     let mut g = g.clone();
@@ -304,6 +307,7 @@ fn minor_min_width(g: &adjlist::Graph) -> usize {
     }
 }
 
+// Computes a minor-based lower bound on the treewidth of the graph for bitset-based graphs.
 fn minor_min_width_bitset(g: &bitset::Graph) -> usize {
     let mut lb = 0;
     let mut g = g.clone();
@@ -328,8 +332,9 @@ fn minor_min_width_bitset(g: &bitset::Graph) -> usize {
     }
 }
 
-// NOTE: Not necessary for the branch and bound algorithm, but is used to reduce the branching
-// factor at each state by eliminating simplicial and almost simplicial vertices.
+// Reduces the graph by eliminating simplicial vertices, and returns the updated values.
+// This improves the performance of the branch-and-bound algorithm by reducing the size of the
+// graphs in the search tree.
 fn reduce_graph(
     graph: &mut adjlist::Graph,
     lower_bound: usize,
@@ -345,6 +350,7 @@ fn reduce_graph(
     (g, f)
 }
 
+// Bitset-based version of `reduce_graph`.
 fn reduce_graph_bitset(
     graph: &mut bitset::Graph,
     lower_bound: usize,
@@ -360,6 +366,9 @@ fn reduce_graph_bitset(
     (g, f)
 }
 
+// Function for the edge addition pruning rule. However, it seems to be a bit slower, so it is
+// currently not used in the branch-and-bound algorithm.
+#[allow(dead_code)]
 fn edge_addition(g: &mut adjlist::Graph, upper_bound: usize) {
     for v in 0..(g.n() - 1) {
         let neighbors_v = g.neighbors_ref(v).unwrap();
@@ -378,6 +387,8 @@ fn edge_addition(g: &mut adjlist::Graph, upper_bound: usize) {
     }
 }
 
+// Bitset-based version of `edge_addition`.
+#[allow(dead_code)]
 fn edge_addition_bitset(g: &mut bitset::Graph, upper_bound: usize) {
     for u in 0..(g.n() - 1) {
         for v in (u + 1)..g.n() {
@@ -404,6 +415,7 @@ fn find_simplicial_vertex(g: &adjlist::Graph, lower_bound: usize) -> Option<usiz
     None
 }
 
+// Bitset-based version of `find_simplicial_vertex`.
 fn find_simplicial_vertex_bitset(g: &bitset::Graph, lower_bound: usize) -> Option<usize> {
     for v in 0..g.n() {
         if is_simplicial_or_almost_simplicial_bitset(g, v, lower_bound) {
@@ -414,6 +426,7 @@ fn find_simplicial_vertex_bitset(g: &bitset::Graph, lower_bound: usize) -> Optio
     None
 }
 
+// Finds all simplicial vertices, and almost simplicial vertices that have a degree <= lower_bound, in the graph.
 fn find_all_simplicial_vertices(g: &adjlist::Graph, lower_bound: usize) -> Vec<usize> {
     let mut simplicial_vertices = Vec::new();
 
@@ -426,6 +439,7 @@ fn find_all_simplicial_vertices(g: &adjlist::Graph, lower_bound: usize) -> Vec<u
     simplicial_vertices
 }
 
+// Bitset-based version of `find_all_simplicial_vertices`.
 fn find_all_simplicial_vertices_bitset(g: &bitset::Graph, lower_bound: usize) -> Vec<usize> {
     let mut simplicial_vertices = Vec::new();
 
@@ -438,11 +452,8 @@ fn find_all_simplicial_vertices_bitset(g: &bitset::Graph, lower_bound: usize) ->
     simplicial_vertices
 }
 
-fn is_simplicial_or_almost_simplicial(
-    g: &adjlist::Graph,
-    v: usize,
-    lower_bound: usize,
-) -> bool {
+// Helper function to check if a vertex is simplicial or almost simplicial with degree <= lower_bound.
+fn is_simplicial_or_almost_simplicial(g: &adjlist::Graph, v: usize, lower_bound: usize) -> bool {
     let neighbors = g.neighbors_ref(v).unwrap();
     let num_neighbors = neighbors.len();
 
@@ -452,14 +463,18 @@ fn is_simplicial_or_almost_simplicial(
     for i in 0..num_neighbors {
         let a = neighbors[i];
 
-        if let Some(x) = excluded_neighbor && a == x {
+        if let Some(x) = excluded_neighbor
+            && a == x
+        {
             continue;
         }
 
         for j in (i + 1)..num_neighbors {
             let b = neighbors[j];
 
-            if let Some(x) = excluded_neighbor && b == x {
+            if let Some(x) = excluded_neighbor
+                && b == x
+            {
                 continue;
             }
 
@@ -492,6 +507,7 @@ fn is_simplicial_or_almost_simplicial(
     true
 }
 
+// Bitset-based version of `is_simplicial_or_almost_simplicial`.
 fn is_simplicial_or_almost_simplicial_bitset(
     g: &bitset::Graph,
     v: usize,
@@ -503,7 +519,9 @@ fn is_simplicial_or_almost_simplicial_bitset(
     let mut excluded_neighbor = None;
 
     for (a, b) in neighbors.iter().tuple_combinations() {
-        if let Some(x) = excluded_neighbor && (a == x || b == x) {
+        if let Some(x) = excluded_neighbor
+            && (a == x || b == x)
+        {
             continue;
         }
 

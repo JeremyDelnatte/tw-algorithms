@@ -1,16 +1,17 @@
+//! An improved recursive exact treewidth algorithm. This algorithm was not included in the
+//! master's thesis.
+
 use std::collections::HashSet;
 
 use crate::{
     graph::{Graph, adjlist, bitset},
     treewidth::exact::{
-        all_connected_component,
-        all_connected_component_bitset,
-        combinations_bitset,
-        rec,
+        all_connected_component, all_connected_component_bitset, combinations_bitset, rec,
     },
-    utils::{bitset::BitSet},
+    utils::bitset::BitSet,
 };
 
+/// Computes the exact treewidth using the improved recursive algorithm.
 pub fn treewidth(graph: &Graph) -> usize {
     match graph {
         Graph::AdjList(g) => {
@@ -30,6 +31,7 @@ pub fn treewidth(graph: &Graph) -> usize {
     }
 }
 
+// Computes the exact treewidth using the improved recursive algorithm for adjacency-list graphs.
 fn treewdith_recursive(graph: &adjlist::Graph, k: usize) -> bool {
     if graph.n() <= k + 1 {
         return true;
@@ -62,7 +64,10 @@ fn treewdith_recursive(graph: &adjlist::Graph, k: usize) -> bool {
     } else {
         let vertices: HashSet<usize> = (0..graph.n()).collect();
 
-        for subset_vec in itertools::Itertools::combinations(0..graph.n(), (0.4203 * (graph.n() as f64)) as usize + 1) {
+        for subset_vec in itertools::Itertools::combinations(
+            0..graph.n(),
+            (0.4203 * (graph.n() as f64)) as usize + 1,
+        ) {
             let subset: HashSet<usize> = subset_vec.into_iter().collect();
             let complement: HashSet<usize> = vertices.difference(&subset).cloned().collect();
 
@@ -133,10 +138,12 @@ fn fill_in_graph(graph: &adjlist::Graph, subset: &HashSet<usize>) -> adjlist::Gr
     new_graph
 }
 
+// Computes the size of the largest connected component in the given list of components.
 fn max_size_all_components(components: &Vec<HashSet<usize>>) -> usize {
     components.iter().map(|c| c.len()).max().unwrap()
 }
 
+// Computes the exact treewidth using the improved recursive algorithm for bitset-based graphs.
 fn treewdith_recursive_bitset(graph: &bitset::Graph, k: usize) -> bool {
     if graph.n() <= k + 1 {
         return true;
@@ -158,11 +165,8 @@ fn treewdith_recursive_bitset(graph: &bitset::Graph, k: usize) -> bool {
             let mut tbool = true;
             for component in components {
                 tbool = tbool
-                    && rec::treewdith_recursive_bitset(
-                        graph,
-                        &BitSet::new(graph.n()),
-                        component,
-                    ) <= k;
+                    && rec::treewdith_recursive_bitset(graph, &BitSet::new(graph.n()), component)
+                        <= k;
             }
 
             if tbool {
@@ -190,11 +194,8 @@ fn treewdith_recursive_bitset(graph: &bitset::Graph, k: usize) -> bool {
 
             for component in components {
                 tbool = tbool
-                    && rec::treewdith_recursive_bitset(
-                        graph,
-                        &BitSet::new(graph.n()),
-                        component,
-                    ) <= k;
+                    && rec::treewdith_recursive_bitset(graph, &BitSet::new(graph.n()), component)
+                        <= k;
             }
 
             if tbool {
@@ -206,6 +207,7 @@ fn treewdith_recursive_bitset(graph: &bitset::Graph, k: usize) -> bool {
     false
 }
 
+// Computes the size of the largest connected component in the given list of components for bitset-based graphs.
 fn max_size_all_components_bitset(components: &Vec<BitSet>) -> usize {
     components.iter().map(|c| c.len()).max().unwrap()
 }

@@ -1,24 +1,44 @@
+//! Exact algorithms for computing treewidth.
+
 use std::collections::HashSet;
 
+use itertools::Itertools;
 use serde::Serialize;
 use strum::EnumIter;
-use itertools::Itertools;
 
-use crate::{graph::{adjlist::Graph, bitset}, utils::{bitset::BitSet}};
+use crate::{
+    graph::{adjlist::Graph, bitset},
+    utils::bitset::BitSet,
+};
 
-pub mod dynamic_prog;
-pub mod rec;
-pub mod improved_rec;
 pub mod branch_bound;
+pub mod dynamic_prog;
+pub mod improved_rec;
+pub mod rec;
 
+/// Exact treewidth algorithms.
 #[derive(EnumIter, Serialize, Debug, Clone)]
 pub enum ExactAlgorithm {
+    /// Dynamic programming algorithm over linear orderings.
     DynamicProg,
+
+    /// Recursive algorithm over linear orderings.
     Recursive,
+
+    /// Recursive algorithm with separator-based improvements.
     ImprovedRec,
+
+    /// Branch-and-bound search over linear orderings.
     BranchBound,
 }
 
+// Helper function to compute the q function for a vertex `v` in an adjacency-list graph, given a
+// subset of vertexes. The q function counts the number of vertices that are not in the subset
+// `subset` that are reachable from `v` using only vertices in `subset`.
+//
+// To achieve this, the function first computes the connected component of `v` in the subgraph
+// induced by `subset`. Then, it iterates over all vertices that are not in `subset` and counts how
+// many of them are connected to the component.
 fn compute_q(v: usize, graph: &Graph, subset: &HashSet<usize>) -> usize {
     assert!(graph.has_vertex(v));
     let component = connected_component(v, graph, &subset);
@@ -37,6 +57,8 @@ fn compute_q(v: usize, graph: &Graph, subset: &HashSet<usize>) -> usize {
     num_vertices
 }
 
+// Helper function to check if a vertex `vertex` is reachable from any vertex in the `component`
+// using only vertices in the `component`.
 fn is_reachable_in_subset(vertex: usize, graph: &Graph, component: &HashSet<usize>) -> bool {
     assert!(graph.has_vertex(vertex));
 
@@ -48,6 +70,8 @@ fn is_reachable_in_subset(vertex: usize, graph: &Graph, component: &HashSet<usiz
     false
 }
 
+// Helper function to compute the connected component of a vertex `vertex` in the subgraph induced by
+// `subset`.
 fn connected_component(vertex: usize, graph: &Graph, subset: &HashSet<usize>) -> HashSet<usize> {
     assert!(graph.has_vertex(vertex));
 
@@ -67,6 +91,7 @@ fn connected_component(vertex: usize, graph: &Graph, subset: &HashSet<usize>) ->
     visited
 }
 
+// Helper function to compute all connected components in the subgraph induced by `subset`.
 fn all_connected_component(graph: &Graph, subset: &HashSet<usize>) -> Vec<HashSet<usize>> {
     let mut visited = HashSet::new();
     let mut components = Vec::new();
@@ -84,6 +109,7 @@ fn all_connected_component(graph: &Graph, subset: &HashSet<usize>) -> Vec<HashSe
     components
 }
 
+// BitSet versions of the `compute_q` function.
 fn compute_q_bitset(v: usize, graph: &bitset::Graph, subset: &BitSet) -> usize {
     assert!(graph.has_vertex(v));
 
@@ -104,11 +130,8 @@ fn compute_q_bitset(v: usize, graph: &bitset::Graph, subset: &BitSet) -> usize {
     num_vertices
 }
 
-fn is_reachable_in_subset_bitset(
-    vertex: usize,
-    graph: &bitset::Graph,
-    component: &BitSet,
-) -> bool {
+// BitSet version of the `is_reachable_in_subset` function.
+fn is_reachable_in_subset_bitset(vertex: usize, graph: &bitset::Graph, component: &BitSet) -> bool {
     assert!(graph.has_vertex(vertex));
 
     let Some(neighbors) = graph.neighbors_ref(vertex) else {
@@ -124,11 +147,8 @@ fn is_reachable_in_subset_bitset(
     false
 }
 
-fn connected_component_bitset(
-    vertex: usize,
-    graph: &bitset::Graph,
-    subset: &BitSet,
-) -> BitSet {
+// BitSet version of the `connected_component` function.
+fn connected_component_bitset(vertex: usize, graph: &bitset::Graph, subset: &BitSet) -> BitSet {
     assert!(graph.has_vertex(vertex));
 
     let mut visited = BitSet::new(graph.n());
@@ -152,10 +172,8 @@ fn connected_component_bitset(
     visited
 }
 
-fn all_connected_component_bitset(
-    graph: &bitset::Graph,
-    subset: &BitSet,
-) -> Vec<BitSet> {
+// BitSet version of the `all_connected_component` function.
+fn all_connected_component_bitset(graph: &bitset::Graph, subset: &BitSet) -> Vec<BitSet> {
     let mut visited = BitSet::new(graph.n());
     let mut components = Vec::new();
 
@@ -174,11 +192,10 @@ fn all_connected_component_bitset(
     components
 }
 
-fn combinations_bitset(
-    subset: &BitSet,
-    n: usize,
-    k: usize,
-) -> impl Iterator<Item = BitSet> {
+// Helper function to compute all combinations of size `k` of vertices in a subset represented as a
+// BitSet. The function returns an iterator over the combinations in order to avoid generating all
+// combinations at once, which can be very large for large subsets and values of `k`.
+fn combinations_bitset(subset: &BitSet, n: usize, k: usize) -> impl Iterator<Item = BitSet> {
     subset
         .to_vec()
         .into_iter()
@@ -198,19 +215,14 @@ fn combinations_bitset(
 mod tests {
     use std::collections::HashSet;
 
-    use crate::{graph::{adjlist}};
-    use super::{connected_component, is_reachable_in_subset, compute_q};
+    use super::{compute_q, connected_component, is_reachable_in_subset};
+    use crate::graph::adjlist;
 
-    use crate::{
-        graph::bitset,
-        utils::bitset::BitSet,
-    };
+    use crate::{graph::bitset, utils::bitset::BitSet};
 
     use super::{
-        compute_q_bitset,
-        connected_component_bitset,
+        all_connected_component_bitset, compute_q_bitset, connected_component_bitset,
         is_reachable_in_subset_bitset,
-        all_connected_component_bitset,
     };
 
     fn bitset_from(n: usize, vertices: &[usize]) -> BitSet {
@@ -337,20 +349,11 @@ mod tests {
         g.add_edge(1, 2);
         g.add_edge(3, 4);
 
-        assert_eq!(
-            compute_q_bitset(2, &g, &bitset_from(5, &[0, 1])),
-            0
-        );
+        assert_eq!(compute_q_bitset(2, &g, &bitset_from(5, &[0, 1])), 0);
 
-        assert_eq!(
-            compute_q_bitset(2, &g, &bitset_from(5, &[0, 1, 3])),
-            0
-        );
+        assert_eq!(compute_q_bitset(2, &g, &bitset_from(5, &[0, 1, 3])), 0);
 
-        assert_eq!(
-            compute_q_bitset(2, &g, &bitset_from(5, &[1])),
-            1
-        );
+        assert_eq!(compute_q_bitset(2, &g, &bitset_from(5, &[1])), 1);
     }
 
     #[test]

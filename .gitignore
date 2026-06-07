@@ -6,3 +6,9 @@
 *.jpg
 *.jpeg
 *.gz
+*.lock
+*.pdf
+*.py
+*.csv
+*.md
+benchmarks/

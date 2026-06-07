@@ -1,22 +1,35 @@
-use std::{io::{BufRead, Write, stdout}, time::Duration};
+//! Implements the CLI subcommand for exact treewidth computation.
+//!
 use clap::{ArgGroup, Parser, ValueEnum};
+use std::{
+    io::{BufRead, Write, stdout},
+    time::Duration,
+};
 
 use serde_json::json;
 use tw_algorithms::treewidth;
 
-use crate::{cli::InputType, timeout::{self, MemoryStats, TreewidthProcessError}};
+use crate::{
+    cli::InputType,
+    timeout::{self, MemoryStats, TreewidthProcessError},
+};
 
+/// Exact treewidth algorithms available in the CLI.
 #[derive(Clone, ValueEnum, Debug, Copy)]
 pub enum ExactAlgorithmArg {
+    /// Dynamic programming algorithm.
     #[value(alias("dp"))]
     DynamicProg,
 
+    /// Recursive exact algorithm.
     #[value(alias("rec"))]
     Recursive,
 
+    /// Improved recursive exact algorithm.
     #[value(alias("imprec"))]
     ImprovedRec,
 
+    /// Branch-and-bound exact algorithm.
     #[value(alias("bb"))]
     BranchBound,
 }
@@ -52,6 +65,7 @@ impl std::fmt::Display for ExactAlgorithmArg {
             .args(["graph", "graphs_file"])
     )
 )] // Ensure that exactly one of --graph or --file is provided
+/// Arguments for the exact treewidth subcommand.
 pub(super) struct ComputeTreewidthArgs {
     #[arg(short = 'a', long, value_enum, default_value_t = ExactAlgorithmArg::DynamicProg)]
     algorithm: ExactAlgorithmArg,
@@ -85,7 +99,12 @@ impl ComputeTreewidthArgs {
     }
 }
 
-pub(super) fn run(args: ComputeTreewidthArgs, with_bitset: bool, timeout_opt: Option<Duration>) -> Result<(), Box<dyn std::error::Error>> {
+/// Runs exact treewidth computation for the requested input.
+pub(super) fn run(
+    args: ComputeTreewidthArgs,
+    with_bitset: bool,
+    timeout_opt: Option<Duration>,
+) -> Result<(), Box<dyn std::error::Error>> {
     match args.input_type() {
         InputType::SingleGraph(g6) => compute_treewidth_single(
             &g6,
@@ -146,7 +165,6 @@ fn compute_treewidth_single(
     if let Some(expected_tw) = expected_treewidth
         && tw != expected_tw
     {
-        // TODO: Should not panic, but return an error instead.
         panic!("Expected treewidth 4, got {} with graph {}", tw, g6);
     }
 
@@ -218,7 +236,6 @@ fn compute_treewidth_file(
         if let Some(expected_tw) = expected_treewidth
             && tw != expected_tw
         {
-            // TODO: Should not panic, but return an error instead.
             panic!("\nExpected treewidth 4, got {} with graph {}", tw, g6);
         }
 
@@ -254,9 +271,17 @@ fn compute_treewidth_file(
 
     if timeout_opt.is_some() {
         if !output_json {
-            println!("\nAll {} graphs processed successfully, but {} timed out, in {:.2?}", count, num_timeouts, instant.elapsed());
+            println!(
+                "\nAll {} graphs processed successfully, but {} timed out, in {:.2?}",
+                count,
+                num_timeouts,
+                instant.elapsed()
+            );
             if let Some(avg) = avg_duration_ns {
-                println!("Average time per graph: {:.2?}", Duration::from_nanos(avg as u64));
+                println!(
+                    "Average time per graph: {:.2?}",
+                    Duration::from_nanos(avg as u64)
+                );
             }
             if let Some(avg) = avg_allocated_bytes {
                 println!("Average allocated bytes per graph: {}", avg);
@@ -286,7 +311,10 @@ fn compute_treewidth_file(
             count, elapsed
         );
         if let Some(avg) = avg_duration_ns {
-            println!("Average time per graph: {:.2?}", Duration::from_nanos(avg as u64));
+            println!(
+                "Average time per graph: {:.2?}",
+                Duration::from_nanos(avg as u64)
+            );
         }
         if let Some(avg) = avg_allocated_bytes {
             println!("Average allocated bytes per graph: {}", avg);
@@ -318,7 +346,11 @@ fn compute_treewidth_with_optional_memory(
     let _profiler = dhat::Profiler::builder().testing().build();
     let result = treewidth::compute_treewidth(g6, algorithm.into(), with_bitset)?;
     let stats = dhat::HeapStats::get();
-    Ok((result.0, result.1, Some((stats.total_bytes, stats.max_bytes as u64))))
+    Ok((
+        result.0,
+        result.1,
+        Some((stats.total_bytes, stats.max_bytes as u64)),
+    ))
 }
 
 #[cfg(not(feature = "measure-memory"))]

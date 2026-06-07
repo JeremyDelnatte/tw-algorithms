@@ -1,10 +1,26 @@
+//! A BitSet implementation that handle different sizes of bitsets using different underlying
+//! representations for efficiency. It supports basic set operations like insertion, and removal,
+//! as well as set operations and bitwise operations.
+
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 
+/// A bitset that can efficiently store sets of positions in `0..n` for various values of `n'. For
+/// small values of `n`, it uses a single `u64` or `u128` to store the bits. For larger values of
+/// 'n', it uses a vector of `u64` blocks to store the bits.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BitSet {
+    /// For bitsets of size up to 64, we can use a single u64 to store the bits to be more memory
+    /// efficient than using the other variants.
     Small(u64),
+
+    /// For bitsets of size up to 128, we can use a single u128 to store the bits to be more memory
+    /// efficient than using the `Large` variant.
     Medium(u128),
+
+    /// For bitsets of size larger than 128, we use a vector of u64 to store the bits. Less memory
+    /// efficient than the other variants, but much better than using a HashSet to store the
+    /// vertices directly.
     Large(Vec<u64>),
 }
 
@@ -28,6 +44,7 @@ impl Hash for BitSet {
 }
 
 impl BitSet {
+    /// Creates an empty bitset with enough capacity for positions in `0..n`.
     pub fn new(n: usize) -> Self {
         match n {
             0..=64 => BitSet::Small(0),
@@ -36,6 +53,7 @@ impl BitSet {
         }
     }
 
+    /// Creates a bitset containing all positions in `0..n`.
     pub fn full(n: usize) -> Self {
         match n {
             0 => BitSet::Small(0),
@@ -55,18 +73,22 @@ impl BitSet {
         }
     }
 
+    /// Creates a small bitset from the raw bits of a `u64`.
     pub fn from_u64(bits: u64) -> Self {
         BitSet::Small(bits)
     }
 
+    /// Creates a medium bitset from the raw bits of a `u128`.
     pub fn from_u128(bits: u128) -> Self {
         BitSet::Medium(bits)
     }
 
+    /// Creates a large bitset from raw `u64` blocks.
     pub fn from_blocks(blocks: Vec<u64>) -> Self {
         BitSet::Large(blocks)
     }
 
+    /// Inserts `pos` into the bitset.
     pub fn insert(&mut self, pos: usize) {
         match self {
             BitSet::Small(bits) => *bits |= 1u64 << pos,
@@ -75,6 +97,7 @@ impl BitSet {
         }
     }
 
+    /// Removes `pos` from the bitset.
     pub fn remove(&mut self, pos: usize) {
         match self {
             BitSet::Small(bits) => *bits &= !(1u64 << pos),
@@ -83,6 +106,7 @@ impl BitSet {
         }
     }
 
+    /// Returns true when `pos` is present in the bitset.
     pub fn contains(&self, pos: usize) -> bool {
         match self {
             BitSet::Small(bits) => (*bits & (1u64 << pos)) != 0,
@@ -94,6 +118,7 @@ impl BitSet {
         }
     }
 
+    /// Returns the number of positions present in the bitset.
     pub fn len(&self) -> usize {
         match self {
             BitSet::Small(bits) => bits.count_ones() as usize,
@@ -102,20 +127,21 @@ impl BitSet {
         }
     }
 
+    /// Returns the number of positions contained in both bitsets.
     pub fn intersection_len(&self, rhs: &BitSet) -> usize {
         match (self, rhs) {
             (BitSet::Small(a), BitSet::Small(b)) => (*a & *b).count_ones() as usize,
             (BitSet::Medium(a), BitSet::Medium(b)) => (*a & *b).count_ones() as usize,
-            (BitSet::Large(a), BitSet::Large(b)) => {
-                a.iter()
-                    .zip(b.iter())
-                    .map(|(x, y)| (x & y).count_ones() as usize)
-                    .sum()
-            }
+            (BitSet::Large(a), BitSet::Large(b)) => a
+                .iter()
+                .zip(b.iter())
+                .map(|(x, y)| (x & y).count_ones() as usize)
+                .sum(),
             _ => panic!("BitSet variants/capacities differ"),
         }
     }
 
+    /// Returns a bitset containing the positions in `self` that are not in `rhs`.
     pub fn difference(&self, rhs: &BitSet) -> BitSet {
         match (self, rhs) {
             (BitSet::Small(a), BitSet::Small(b)) => BitSet::Small(*a & !*b),
@@ -127,6 +153,7 @@ impl BitSet {
         }
     }
 
+    /// Returns true when the bitset contains no positions.
     pub fn is_empty(&self) -> bool {
         match self {
             BitSet::Small(bits) => *bits == 0,
@@ -135,17 +162,27 @@ impl BitSet {
         }
     }
 
+    /// Returns true when the bitset contains exactly one position.
     pub fn has_one_bit(&self) -> bool {
         self.len() == 1
     }
 
+    /// Returns the smallest position in the bitset, or `None` if it is empty.
     pub fn first_bit(&self) -> Option<usize> {
         match self {
             BitSet::Small(bits) => {
-                if *bits == 0 { None } else { Some(bits.trailing_zeros() as usize) }
+                if *bits == 0 {
+                    None
+                } else {
+                    Some(bits.trailing_zeros() as usize)
+                }
             }
             BitSet::Medium(bits) => {
-                if *bits == 0 { None } else { Some(bits.trailing_zeros() as usize) }
+                if *bits == 0 {
+                    None
+                } else {
+                    Some(bits.trailing_zeros() as usize)
+                }
             }
             BitSet::Large(blocks) => {
                 for (i, &block) in blocks.iter().enumerate() {
@@ -158,14 +195,17 @@ impl BitSet {
         }
     }
 
+    /// Converts the bitset into a vector of contained positions.
     pub fn to_vec(&self) -> Vec<usize> {
         self.iter().collect()
     }
 
+    /// Converts the bitset into a hash set of contained positions.
     pub fn to_hashset(&self) -> HashSet<usize> {
         self.iter().collect()
     }
 
+    /// Returns an iterator over the positions contained in the bitset.
     pub fn iter(&self) -> BitSetIter<'_> {
         match self {
             BitSet::Small(bits) => BitSetIter::Small(*bits),
@@ -178,7 +218,7 @@ impl BitSet {
         }
     }
 
-    // This method is used to shift all bits from max to pos to the right by one position, effectively removing the bit at pos and shifting all higher bits down.
+    /// Removes the bit at `pos` and shifts all higher positions down by one.
     pub fn right_shift_from(&mut self, pos: usize) {
         match self {
             BitSet::Small(bits) => {
@@ -198,7 +238,8 @@ impl BitSet {
                 }
 
                 // Shift the current block
-                blocks[block_idx] = (blocks[block_idx] & ((1u64 << bit_idx) - 1)) | ((blocks[block_idx] >> 1) & !((1u64 << bit_idx) - 1));
+                blocks[block_idx] = (blocks[block_idx] & ((1u64 << bit_idx) - 1))
+                    | ((blocks[block_idx] >> 1) & !((1u64 << bit_idx) - 1));
 
                 // Shift subsequent blocks
                 for i in block_idx + 1..blocks.len() {
@@ -213,13 +254,24 @@ impl BitSet {
     }
 }
 
+/// Iterator over the positions contained in a [`BitSet`].
 #[derive(Debug, Clone)]
 pub enum BitSetIter<'a> {
+    /// Iterator state for bitsets using a single `u64` to store the bits.
     Small(u64),
+
+    /// Iterator state for bitsets using a single `u128` to store the bits.
     Medium(u128),
+
+    /// Iterator state for bitsets using blocks of `u64` to store the bits.
     Large {
+        /// Remaining blocks being iterated.
         blocks: &'a [u64],
+
+        /// Index of the current block.
         block_idx: usize,
+
+        /// Remaining bits in the current block.
         current: u64,
     },
 }

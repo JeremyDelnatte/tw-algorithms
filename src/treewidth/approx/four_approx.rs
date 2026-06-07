@@ -1,3 +1,6 @@
+//! A 4-approximation algorithm for treewidth. It uses two-third vertex separators inside the
+//! generic approximation function.
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 
@@ -10,10 +13,11 @@ use crate::utils::bitset::BitSet;
 
 use super::{
     Separator, SeparatorBitSet, add_arc, approx_treewidth_generic, build_base_flow_network,
-    build_base_flow_network_bitset, minimum_vertex_separator, minimum_vertex_separator_bitset,
-    vin, vout,
+    build_base_flow_network_bitset, minimum_vertex_separator, minimum_vertex_separator_bitset, vin,
+    vout,
 };
 
+/// Approximates the treewidth using the 4-approximation algorithm.
 pub fn approx_treewidth(graph: &graph::Graph) -> usize {
     approx_treewidth_generic(
         graph,
@@ -22,7 +26,8 @@ pub fn approx_treewidth(graph: &graph::Graph) -> usize {
     )
 }
 
-pub fn two_third_vertex_separator(
+// Finds a two-third vertex separator for an adjacency-list graph.
+fn two_third_vertex_separator(
     graph: &Graph,
     subset: &HashSet<usize>,
     w: &HashSet<usize>,
@@ -54,8 +59,11 @@ pub fn two_third_vertex_separator(
         let w1: Vec<usize> = w1_refs.into_iter().copied().collect();
         let w1_set: HashSet<usize> = w1.iter().copied().collect();
 
-        let remaining: Vec<usize> =
-            w_vec.iter().copied().filter(|v| !w1_set.contains(v)).collect();
+        let remaining: Vec<usize> = w_vec
+            .iter()
+            .copied()
+            .filter(|v| !w1_set.contains(v))
+            .collect();
 
         let mut w1_edges = base_edges.clone();
         let mut w1_cap = base_cap.clone();
@@ -118,7 +126,8 @@ pub fn two_third_vertex_separator(
     None
 }
 
-pub fn two_third_vertex_separator_bitset(
+// Finds a two-third vertex separator for a bitset-based graph.
+fn two_third_vertex_separator_bitset(
     graph: &bitset::Graph,
     subset: &BitSet,
     w: &BitSet,
@@ -210,9 +219,7 @@ pub fn two_third_vertex_separator_bitset(
             );
 
             if let Some(separator) = separator {
-                if separator.sep.len() <= k
-                    && !separator.c1.is_empty()
-                    && !separator.c2.is_empty()
+                if separator.sep.len() <= k && !separator.c1.is_empty() && !separator.c2.is_empty()
                 {
                     return Some(separator);
                 }

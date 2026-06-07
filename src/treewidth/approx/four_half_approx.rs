@@ -1,3 +1,6 @@
+//! A 4.5-approximation algorithm for treewidth. It uses one-half vertex separators inside the
+//! generic separator function.
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 
@@ -10,10 +13,11 @@ use crate::utils::bitset::BitSet;
 
 use super::{
     Separator, SeparatorBitSet, add_arc, approx_treewidth_generic, build_base_flow_network,
-    build_base_flow_network_bitset, minimum_vertex_separator, minimum_vertex_separator_bitset,
-    vin, vout,
+    build_base_flow_network_bitset, minimum_vertex_separator, minimum_vertex_separator_bitset, vin,
+    vout,
 };
 
+/// Approximates the treewidth using the 4.5-approximation algorithm.
 pub fn approx_treewidth(graph: &graph::Graph) -> usize {
     approx_treewidth_generic(
         graph,
@@ -22,7 +26,8 @@ pub fn approx_treewidth(graph: &graph::Graph) -> usize {
     )
 }
 
-pub fn one_half_vertex_separator(
+// Finds a one-half vertex separator for an adjacency-list graph.
+fn one_half_vertex_separator(
     graph: &Graph,
     subset: &HashSet<usize>,
     w: &HashSet<usize>,
@@ -70,8 +75,11 @@ pub fn one_half_vertex_separator(
             add_arc(&mut w1_edges, &mut w1_cap, src_out, vin(u), inf);
         }
 
-        let w2: Vec<usize> =
-            w_vec.iter().copied().filter(|v| !w1_set.contains(v)).collect();
+        let w2: Vec<usize> = w_vec
+            .iter()
+            .copied()
+            .filter(|v| !w1_set.contains(v))
+            .collect();
 
         let mut w2_edges = w1_edges.clone();
         let mut w2_cap = w1_cap.clone();
@@ -112,7 +120,9 @@ pub fn one_half_vertex_separator(
 
     None
 }
-pub fn one_half_vertex_separator_bitset(
+
+// Finds a one-half vertex separator for a bitset-based graph.
+fn one_half_vertex_separator_bitset(
     graph: &bitset::Graph,
     subset: &BitSet,
     w: &BitSet,

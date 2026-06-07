@@ -1,23 +1,22 @@
+//! A recursive exact treewidth algorithm.
+
 use std::collections::HashSet;
 
 use itertools::Itertools;
 
 use crate::{
     graph::{Graph, adjlist, bitset},
-    treewidth::exact::{
-        combinations_bitset,
-        compute_q,
-        compute_q_bitset,
-    },
-    utils::{bitset::BitSet},
+    treewidth::exact::{combinations_bitset, compute_q, compute_q_bitset},
+    utils::bitset::BitSet,
 };
 
+/// Computes the exact treewidth using the recursive algorithm.
 pub fn treewidth(graph: &Graph) -> usize {
     match graph {
         Graph::AdjList(g) => {
             let vertices: HashSet<usize> = (0..g.n()).collect();
             treewdith_recursive(g, &HashSet::new(), vertices)
-        },
+        }
         Graph::BitSet(g) => {
             let vertices = BitSet::full(g.n());
             treewdith_recursive_bitset(g, &BitSet::new(g.n()), vertices)
@@ -25,7 +24,12 @@ pub fn treewidth(graph: &Graph) -> usize {
     }
 }
 
-pub(super) fn treewdith_recursive(graph: &adjlist::Graph, left: &HashSet<usize>, vertices: HashSet<usize>) -> usize {
+// Computes the exact treewidth using the recursive algorithm for adjacency-list graphs.
+pub(super) fn treewdith_recursive(
+    graph: &adjlist::Graph,
+    left: &HashSet<usize>,
+    vertices: HashSet<usize>,
+) -> usize {
     if vertices.len() == 1 {
         let v = *vertices.iter().next().unwrap();
         return compute_q(v, graph, &left);
@@ -38,10 +42,7 @@ pub(super) fn treewdith_recursive(graph: &adjlist::Graph, left: &HashSet<usize>,
 
     for subset_vec in vec.into_iter().combinations(set_size) {
         let subset: HashSet<usize> = subset_vec.into_iter().collect();
-        let complement: HashSet<usize> = vertices
-            .difference(&subset)
-            .cloned()
-            .collect();
+        let complement: HashSet<usize> = vertices.difference(&subset).cloned().collect();
 
         let mut new_left = left.clone();
         for &v in &subset {
@@ -60,6 +61,7 @@ pub(super) fn treewdith_recursive(graph: &adjlist::Graph, left: &HashSet<usize>,
     opt
 }
 
+// Computes the exact treewidth using the recursive algorithm for bitset-based graphs.
 pub(super) fn treewdith_recursive_bitset(
     graph: &bitset::Graph,
     left: &BitSet,

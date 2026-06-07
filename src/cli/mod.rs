@@ -1,3 +1,5 @@
+//! Defines the command-line interface.
+
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
@@ -48,9 +50,7 @@ impl Cli {
             Command::HeuristicTreewidth(args) => {
                 heuristic_treewidth::run(args, self.with_bitset, self.timeout)
             }
-            Command::Benchmark(args) => {
-                benchmark::run(args, self.with_bitset, self.timeout)
-            }
+            Command::Benchmark(args) => benchmark::run(args, self.with_bitset, self.timeout),
         }
     }
 }

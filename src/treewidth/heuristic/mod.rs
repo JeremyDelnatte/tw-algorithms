@@ -1,20 +1,36 @@
+//! Heuristic treewidth algorithms based on linear orderings. It chooses the next vertex to
+//! eliminated based on a heuristic score, such as the number of fill-in edges that would be added
+//! by eliminating it.
+
 use serde::Serialize;
 use strum::EnumIter;
 
-use crate::
-    graph::{Graph, adjlist, bitset}
-;
+use crate::graph::{Graph, adjlist, bitset};
 
+/// Heuristic treewidth algorithms based on linear orderings.
 #[derive(EnumIter, Serialize, Debug, Clone, Copy)]
 pub enum HeuristicAlgorithm {
+    /// Eliminates a vertex with minimum fill-in.
     MinFill,
+
+    /// Eliminates a vertex with minimum degree.
     MinDegree,
+
+    /// Eliminates a vertex minimizing the sum of degree and fill-in.
     MinDegreePlusFill,
+
+    /// Eliminates a vertex minimizing fill-in minus degree.
     MinSparsestSubgraph,
+
+    /// Eliminates a vertex with minimum fill-in, breaking ties by degree.
     MinFillDegree,
+
+    /// Eliminates a vertex with minimum degree, breaking ties by fill-in.
     MinDegreeFill,
 }
 
+// Helper function to compute the width of a heuristic linear ordering. The `vertex_selector`
+// function is used to select the next vertex to eliminate at each step of the algorithm.
 fn min_heuristic(g: &adjlist::Graph, vertex_selector: impl Fn(&adjlist::Graph) -> usize) -> usize {
     let mut g = g.clone();
     let mut max_degree = 0;
@@ -27,7 +43,13 @@ fn min_heuristic(g: &adjlist::Graph, vertex_selector: impl Fn(&adjlist::Graph) -
     max_degree
 }
 
-fn min_heuristic_bitset(g: &bitset::Graph, vertex_selector: impl Fn(&bitset::Graph) -> usize) -> usize {
+// Helper function to compute the width of a heuristic linear ordering for bitset-based graphs. The
+// `vertex_selector` function is used to select the next vertex to eliminate at each step of the
+// algorithm.
+fn min_heuristic_bitset(
+    g: &bitset::Graph,
+    vertex_selector: impl Fn(&bitset::Graph) -> usize,
+) -> usize {
     let mut g = g.clone();
     let mut max_degree = 0;
 
@@ -39,6 +61,7 @@ fn min_heuristic_bitset(g: &bitset::Graph, vertex_selector: impl Fn(&bitset::Gra
     max_degree
 }
 
+/// Computes the width of the min-fill elimination heuristic.
 pub fn min_fill(graph: &Graph) -> usize {
     match graph {
         Graph::AdjList(g) => min_heuristic(g, |g| g.min_fill_in_count_vertex()),
@@ -46,6 +69,7 @@ pub fn min_fill(graph: &Graph) -> usize {
     }
 }
 
+/// Computes the width of the min-degree elimination heuristic.
 pub fn min_degree(graph: &Graph) -> usize {
     match graph {
         Graph::AdjList(g) => min_heuristic(g, |g| g.min_degree_vertex()),
@@ -53,6 +77,7 @@ pub fn min_degree(graph: &Graph) -> usize {
     }
 }
 
+/// Computes the width of the minimum degree-plus-fill heuristic.
 pub fn min_degree_plus_fill(graph: &Graph) -> usize {
     match graph {
         Graph::AdjList(g) => min_heuristic(g, |g| {
@@ -86,6 +111,7 @@ pub fn min_degree_plus_fill(graph: &Graph) -> usize {
     }
 }
 
+/// Computes the width of the minimum sparsest-subgraph heuristic.
 pub fn min_sparsest_subgraph(graph: &Graph) -> usize {
     match graph {
         Graph::AdjList(g) => min_heuristic(g, |g| {
@@ -119,6 +145,7 @@ pub fn min_sparsest_subgraph(graph: &Graph) -> usize {
     }
 }
 
+/// Computes the width of the min-fill heuristic with degree-based tie-breaking.
 pub fn min_fill_degree(graph: &Graph) -> usize {
     match graph {
         Graph::AdjList(g) => min_heuristic(g, |g| {
@@ -164,6 +191,7 @@ pub fn min_fill_degree(graph: &Graph) -> usize {
     }
 }
 
+/// Computes the width of the min-degree heuristic with fill-in-based tie-breaking.
 pub fn min_degree_fill(graph: &Graph) -> usize {
     match graph {
         Graph::AdjList(g) => min_heuristic(g, |g| {

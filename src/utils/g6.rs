@@ -1,38 +1,45 @@
+//! Utilities for parsing and generating graph6 format. The graph6 format is a compact way to
+//! represent graphs as a string of ASCII characters.
 
+/// Error type for graph6 parsing and generation.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    /// The graph6 input is empty.
     #[error("empty input")]
     Empty,
 
+    /// The input uses a graph6 size encoding that is not supported by this crate.
     #[error("unsupported graph6 format for large graphs")]
     UnsupportedLargeGraph,
 
+    /// The input is not valid graph6 data.
     #[error("invalid graph6 format")]
     InvalidFormat,
 }
 
-
+/// Parses the size of the graph from the graph6 format. The first bytes of the graph6 format
+/// encode the number of vertices in the graph.
 pub fn get_size(bytes: &[u8]) -> Result<usize, Error> {
     let Some(first_byte) = bytes.get(0) else {
         return Err(Error::Empty);
     };
 
     Ok(match first_byte {
-        63..=125 => {
-            (first_byte - 63) as usize
-        },
+        63..=125 => (first_byte - 63) as usize,
         126 => {
             if bytes.len() < 4 {
-                    return Err(Error::InvalidFormat);
+                return Err(Error::InvalidFormat);
             }
             ((bytes[1] as usize - 63) << 12)
                 | ((bytes[2] as usize - 63) << 6)
                 | (bytes[3] as usize - 63)
-        },
+        }
         _ => return Err(Error::InvalidFormat),
     })
 }
 
+/// Converts a graph size to the graph6 format. The graph6 format encodes the number of vertices in
+/// the first bytes of the format.
 pub fn to_size(n: usize) -> Vec<u8> {
     match n {
         0..=62 => vec![n as u8 + 63],
@@ -46,6 +53,8 @@ pub fn to_size(n: usize) -> Vec<u8> {
     }
 }
 
+/// Parses the edges of the graph from the graph6 format. The edges are encoded in the bytes
+/// following the size of the graph in the representation.
 pub fn get_edges(bytes: &[u8], n: usize) -> Result<Vec<(usize, usize)>, Error> {
     let mut edges = Vec::new();
     let mut row = 0;
@@ -66,7 +75,6 @@ pub fn get_edges(bytes: &[u8], n: usize) -> Result<Vec<(usize, usize)>, Error> {
             if row == col - 1 {
                 row = 0;
                 col += 1;
-
             } else {
                 row += 1;
             }
@@ -80,6 +88,8 @@ pub fn get_edges(bytes: &[u8], n: usize) -> Result<Vec<(usize, usize)>, Error> {
     Ok(edges)
 }
 
+/// Converts a list of edges to the graph6 format. The edges are encoded in the bytes following the
+/// size of the graph that should already be encoded in `buf`.
 pub fn to_edges(edges: &[(usize, usize)], n: usize, buf: &mut Vec<u8>) {
     let start_index = buf.len();
 

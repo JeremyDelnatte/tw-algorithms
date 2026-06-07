@@ -1,15 +1,26 @@
-use std::{io::{BufRead, Write, stdout}, time::Duration};
+//! Implements the CLI subcommand for approximate treewidth computation.
+
 use clap::{ArgGroup, Parser, ValueEnum};
+use std::{
+    io::{BufRead, Write, stdout},
+    time::Duration,
+};
 
 use tw_algorithms::treewidth::{self, approx::ApproxAlgorithm};
 
-use crate::{cli::InputType, timeout::{self, MemoryStats, TreewidthProcessError}};
+use crate::{
+    cli::InputType,
+    timeout::{self, MemoryStats, TreewidthProcessError},
+};
 
+/// Approximation algorithms available for treewidth approximation.
 #[derive(Clone, ValueEnum, Debug, Copy)]
 pub enum ApproxAlgorithmArg {
+    /// 4-approximation algorithm.
     #[value(alias("4apx"))]
     FourApprox,
 
+    /// 4.5-approximation algorithm.
     #[value(alias("4.5apx"))]
     FourHalfApprox,
 }
@@ -40,7 +51,8 @@ impl std::fmt::Display for ApproxAlgorithmArg {
             .required(true)
             .args(["graph", "graphs_file"])
     )
-)] // Ensure that exactly one of --graph or --file is provided
+)] // Ensure that exactly one of `--graph` or `--file` is provided
+/// Arguments for the approximate treewidth subcommand.
 pub(super) struct ApproximateTreewidthArgs {
     #[arg(short = 'a', long, value_enum, default_value_t = ApproxAlgorithmArg::FourApprox)]
     algorithm: ApproxAlgorithmArg,
@@ -74,7 +86,12 @@ impl ApproximateTreewidthArgs {
     }
 }
 
-pub(super) fn run(args: ApproximateTreewidthArgs, with_bitset: bool, timeout_opt: Option<Duration>) -> Result<(), Box<dyn std::error::Error>> {
+/// Runs approximate treewidth computation for the requested input.
+pub(super) fn run(
+    args: ApproximateTreewidthArgs,
+    with_bitset: bool,
+    timeout_opt: Option<Duration>,
+) -> Result<(), Box<dyn std::error::Error>> {
     match args.input_type() {
         InputType::SingleGraph(g6) => approximate_treewidth_single(
             &g6,
@@ -125,7 +142,7 @@ fn approximate_treewidth_single(
                     println!("Approximation timed out after {:.2?}", timeout);
                 }
                 return Ok(());
-            },
+            }
             Err(e) => return Err(e.into()),
         }
     } else {
@@ -133,17 +150,29 @@ fn approximate_treewidth_single(
     };
     if let Some(optimal_tw) = optimal_treewidth {
         if tw < optimal_tw {
-            panic!("Approximated treewidth {} is less than the optimal treewidth {} for graph {}", tw, optimal_tw, g6);
+            panic!(
+                "Approximated treewidth {} is less than the optimal treewidth {} for graph {}",
+                tw, optimal_tw, g6
+            );
         }
 
         let algorithm: ApproxAlgorithm = algorithm.into();
         if tw > algorithm.worst_case_from_optimal(optimal_tw) {
-            panic!("Approximated treewidth {} is greater than the worst case treewidth {} for optimal treewidth {} with algorithm {:?}", tw, algorithm.worst_case_from_optimal(optimal_tw), optimal_tw, algorithm);
+            panic!(
+                "Approximated treewidth {} is greater than the worst case treewidth {} for optimal treewidth {} with algorithm {:?}",
+                tw,
+                algorithm.worst_case_from_optimal(optimal_tw),
+                optimal_tw,
+                algorithm
+            );
         }
     }
 
     if !output_json {
-        println!("Approximated treewidth: {}, Time taken: {:.2?}", tw, duration);
+        println!(
+            "Approximated treewidth: {}, Time taken: {:.2?}",
+            tw, duration
+        );
         if let Some((allocated_bytes, peak_bytes)) = memory_stats {
             println!("Allocated bytes: {}", allocated_bytes);
             println!("Peak bytes: {}", peak_bytes);
@@ -201,7 +230,7 @@ fn approximate_treewidth_file(
                 Err(TreewidthProcessError::Timeout { .. }) => {
                     num_timeouts += 1;
                     continue;
-                },
+                }
                 Err(e) => return Err(e.into()),
             }
         } else {
@@ -209,12 +238,21 @@ fn approximate_treewidth_file(
         };
         if let Some(optimal_tw) = optimal_treewidth {
             if tw < optimal_tw {
-                panic!("\nApproximated treewidth {} is less than the optimal treewidth {} for graph {}", tw, optimal_tw, g6);
+                panic!(
+                    "\nApproximated treewidth {} is less than the optimal treewidth {} for graph {}",
+                    tw, optimal_tw, g6
+                );
             }
 
             let algorithm: ApproxAlgorithm = algorithm.clone().into();
             if tw > algorithm.worst_case_from_optimal(optimal_tw) {
-                panic!("\nApproximated treewidth {} is greater than the worst case treewidth {} for optimal treewidth {} with algorithm {:?}", tw, algorithm.worst_case_from_optimal(optimal_tw), optimal_tw, algorithm);
+                panic!(
+                    "\nApproximated treewidth {} is greater than the worst case treewidth {} for optimal treewidth {} with algorithm {:?}",
+                    tw,
+                    algorithm.worst_case_from_optimal(optimal_tw),
+                    optimal_tw,
+                    algorithm
+                );
             }
         }
 
@@ -250,9 +288,17 @@ fn approximate_treewidth_file(
 
     if timeout_opt.is_some() {
         if !output_json {
-            println!("\nAll {} graphs processed successfully, but {} timed out, in {:.2?}", count, num_timeouts, instant.elapsed());
+            println!(
+                "\nAll {} graphs processed successfully, but {} timed out, in {:.2?}",
+                count,
+                num_timeouts,
+                instant.elapsed()
+            );
             if let Some(avg) = avg_duration_ns {
-                println!("Average time per graph: {:.2?}", Duration::from_nanos(avg as u64));
+                println!(
+                    "Average time per graph: {:.2?}",
+                    Duration::from_nanos(avg as u64)
+                );
             }
             if let Some(avg) = avg_allocated_bytes {
                 println!("Average allocated bytes per graph: {}", avg);
@@ -282,7 +328,10 @@ fn approximate_treewidth_file(
             count, elapsed
         );
         if let Some(avg) = avg_duration_ns {
-            println!("Average time per graph: {:.2?}", Duration::from_nanos(avg as u64));
+            println!(
+                "Average time per graph: {:.2?}",
+                Duration::from_nanos(avg as u64)
+            );
         }
         if let Some(avg) = avg_allocated_bytes {
             println!("Average allocated bytes per graph: {}", avg);
@@ -315,7 +364,11 @@ fn approximate_treewidth_with_optional_memory(
     let _profiler = dhat::Profiler::builder().testing().build();
     let result = treewidth::approximate_treewidth(g6, algorithm.into(), with_bitset)?;
     let stats = dhat::HeapStats::get();
-    Ok((result.0, result.1, Some((stats.total_bytes, stats.max_bytes as u64))))
+    Ok((
+        result.0,
+        result.1,
+        Some((stats.total_bytes, stats.max_bytes as u64)),
+    ))
 }
 
 #[cfg(not(feature = "measure-memory"))]

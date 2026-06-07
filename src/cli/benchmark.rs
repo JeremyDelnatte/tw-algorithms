@@ -1,3 +1,7 @@
+//! Implements benchmarking commands for treewidth algorithms. Benchmarks can run on generated
+//! random graphs or preset graph6 files and write runtime, memory, timeout, and treewidth results
+//! to a CSV file.
+
 use std::{
     fs::{File, create_dir_all},
     io::BufRead,
@@ -26,6 +30,7 @@ use crate::{
             .args(["exact_algorithm", "approximate_algorithm", "heuristic_algorithm"])
     )
 )] // Ensure that exactly one algorithm type is provided
+/// Arguments for the benchmark command.
 pub struct BenchmarkArgs {
     #[arg(long, value_enum)]
     exact_algorithm: Option<ExactAlgorithmArg>,
@@ -98,10 +103,16 @@ struct PresetGraphsArgs {
     num_iterations: usize,
 }
 
+/// Algorithm selected for a benchmark run.
 #[derive(Clone, Copy)]
 pub enum AlgorithmArg {
+    /// Exact algorithm benchmark.
     Exact(ExactAlgorithmArg),
+
+    /// Approximation algorithm benchmark.
     Approx(ApproxAlgorithmArg),
+
+    /// Heuristic algorithm benchmark.
     Heuristic(HeuristicAlgorithmArg),
 }
 
@@ -127,8 +138,6 @@ impl From<AlgorithmArg> for treewidth::Algorithm {
     }
 }
 
-// TODO: Maybe add more fields to this stuct, such as memory usage, and maybe optimal treewidth if
-// we know it.
 #[derive(Serialize, Deserialize)]
 struct ExperimentResult {
     name: Option<String>,
@@ -141,6 +150,7 @@ struct ExperimentResult {
     treewidth: Option<usize>,
 }
 
+/// Runs the selected benchmark scenario.
 pub fn run(
     args: BenchmarkArgs,
     with_bitset: bool,
@@ -339,7 +349,9 @@ fn benchmark_preset_graphs(
             )?;
             progress_bar::inc_iteration_progress(&progress);
 
-            if let Some(timeout) = timeout && duration >= timeout {
+            if let Some(timeout) = timeout
+                && duration >= timeout
+            {
                 break;
             }
         }
@@ -440,12 +452,7 @@ fn run_algorithm(
     let mut timeout_flag = false;
 
     let (tw, runtime, memory_stats) = if let Some(timeout) = timeout_opt {
-        match timeout::compute_or_approximate_treewidth(
-            graph_g6,
-            algorithm,
-            with_bitset,
-            timeout,
-        ) {
+        match timeout::compute_or_approximate_treewidth(graph_g6, algorithm, with_bitset, timeout) {
             Ok((tw, runtime, memory_stats)) => (Some(tw), runtime, memory_stats),
             Err(timeout::TreewidthProcessError::Timeout { timeout }) => {
                 timeout_flag = true;
@@ -486,7 +493,11 @@ fn compute_treewidth_with_optional_memory(
     let result =
         treewidth::compute_or_approximate_treewidth(graph_g6, algorithm.into(), with_bitset)?;
     let stats = dhat::HeapStats::get();
-    Ok((Some(result.0), result.1, Some((stats.total_bytes, stats.max_bytes as u64))))
+    Ok((
+        Some(result.0),
+        result.1,
+        Some((stats.total_bytes, stats.max_bytes as u64)),
+    ))
 }
 
 #[cfg(not(feature = "measure-memory"))]

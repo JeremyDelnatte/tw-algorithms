@@ -1,3 +1,5 @@
+//! A maximum-flow helper based on Dinitz's algorithm used by the approximation algorithms.
+
 #[derive(Clone, Debug)]
 struct Edge {
     to: usize,
@@ -7,8 +9,15 @@ struct Edge {
 
 #[derive(Clone, Debug)]
 struct Dinic {
+    // Graph of the flow network.
     g: Vec<Vec<Edge>>,
+
+    // `level[v]` is the distance from `s` to `v` in the level graph constructed in the BFS phase
+    // of the algorithm.
     level: Vec<i32>,
+
+    // `it[v]` is the index of the next edge to explore from vertex `v` in the DFS phase of
+    // Dinitz's algorithm.
     it: Vec<usize>,
 }
 
@@ -32,8 +41,16 @@ impl Dinic {
         let rev_to = self.g[to].len();
         let rev_from = self.g[from].len();
 
-        self.g[from].push(Edge { to, rev: rev_to, cap });
-        self.g[to].push(Edge { to: from, rev: rev_from, cap: 0 });
+        self.g[from].push(Edge {
+            to,
+            rev: rev_to,
+            cap,
+        });
+        self.g[to].push(Edge {
+            to: from,
+            rev: rev_from,
+            cap: 0,
+        });
     }
 
     fn bfs(&mut self, s: usize, t: usize) -> bool {
@@ -129,6 +146,8 @@ impl Dinic {
     }
 }
 
+/// Computes the vertices reachable from `s` in the residual network when the flow is below the
+/// limit. If the flow is above the limit, returns None.
 pub fn max_flow_reachable(
     n: usize,
     edges: &[(usize, usize)],
@@ -141,7 +160,7 @@ pub fn max_flow_reachable(
 
     for &(u, v) in edges {
         deg[u] += 1; // forward edge
-        deg[v] += 1; // reverse edge
+        deg[v] += 1; // backward edge
     }
 
     let mut dinic = Dinic::with_degrees(&deg);

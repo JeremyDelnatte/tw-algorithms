@@ -1,3 +1,5 @@
+//! Separator-based approximation algorithms for treewidth.
+
 use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
@@ -12,13 +14,19 @@ use crate::{
 pub mod four_approx;
 pub mod four_half_approx;
 
+/// Approximation algorithms for treewidth based on vertex separators.
 #[derive(EnumIter, Serialize, Debug, Clone, Copy)]
 pub enum ApproxAlgorithm {
+    /// A 4-approximation based on two-third vertex separators.
     FourApprox,
+
+    /// A 4.5-approximation based on one-half vertex separators.
     FourHalfApprox,
 }
 
 impl ApproxAlgorithm {
+    /// Returns the worst-case treewidth bound for this approximation when the optimal treewidth is
+    /// known.
     pub fn worst_case_from_optimal(&self, optimal: usize) -> usize {
         match self {
             ApproxAlgorithm::FourApprox => 4 * optimal,
@@ -27,23 +35,45 @@ impl ApproxAlgorithm {
     }
 }
 
-type SeparatorFn = fn(&adjlist::Graph, &HashSet<usize>, &HashSet<usize>, usize) -> Option<Separator>;
+// Represents a separator-finding function. Since both algorithms use the same recursive structure,
+// we could make a generic recursive function to which we pass the separator-finding function as an
+// argument. This allows us to avoid code duplication between the two approximation algorithms,
+// which holy differ in a few lines of code.
+type SeparatorFn =
+    fn(&adjlist::Graph, &HashSet<usize>, &HashSet<usize>, usize) -> Option<Separator>;
+
+// Bitset version of the separator-finding function type.
 type SeparatorBitSetFn = fn(&bitset::Graph, &BitSet, &BitSet, usize) -> Option<SeparatorBitSet>;
 
+/// A separator and the two vertex sets it separates in an adjacency-list graph.
 #[derive(Debug)]
 pub struct Separator {
+    /// The separator vertices.
     pub sep: HashSet<usize>,
+
+    /// The first separated component.
     pub c1: HashSet<usize>,
+
+    /// The second separated component.
     pub c2: HashSet<usize>,
 }
 
+/// A separator and the two vertex sets it separates in a bitset-base graph representation.
 #[derive(Debug, Clone)]
 pub struct SeparatorBitSet {
+    /// The separator vertices.
     pub sep: BitSet,
+
+    /// The first separated component.
     pub c1: BitSet,
+
+    /// The second separated component.
     pub c2: BitSet,
 }
 
+// Generic implementation of the separator-based approximation algorithms. The `separator_finder` and
+// `separator_finder_bitset` arguments are used to specify the separator-finding function to use for
+// adjacency-list and bitset-based graphs, respectively.
 pub(crate) fn approx_treewidth_generic(
     graph: &graph::Graph,
     separator_finder: SeparatorFn,
@@ -69,7 +99,9 @@ pub(crate) fn approx_treewidth_generic(
                 }
             }
 
-            unreachable!("The treewidth of a graph with n vertices is at most n-1, so this loop should have found a solution (k = n should alaways succeed)");
+            unreachable!(
+                "The treewidth of a graph with n vertices is at most n-1, so this loop should have found a solution (k = n should alaways succeed)"
+            );
         }
         graph::Graph::BitSet(g) => {
             let mut subset = BitSet::new(g.n());
@@ -94,11 +126,15 @@ pub(crate) fn approx_treewidth_generic(
                 }
             }
 
-            unreachable!("The treewidth of a graph with n vertices is at most n-1, so this loop should have found a solution (k = n should alaways succeed)");
+            unreachable!(
+                "The treewidth of a graph with n vertices is at most n-1, so this loop should have found a solution (k = n should alaways succeed)"
+            );
         }
     }
 }
 
+// Generic recursive function for the separator-based approximation algorithms. The `separator_finder`
+// argument is used to specify the separator-finding function to use for adjacency-list graphs.
 pub(crate) fn treewidth_recursive(
     graph: &mut adjlist::Graph,
     subset: &HashSet<usize>,
@@ -167,6 +203,8 @@ pub(crate) fn treewidth_recursive(
     true
 }
 
+// Generic recursive function for the separator-based approximation algorithms. The `separator_finder_bitset`
+// argument is used to specify the separator-finding function to use for bitset-based graphs.
 pub(crate) fn treewidth_recursive_bitset(
     graph: &mut bitset::Graph,
     subset: &BitSet,
@@ -214,14 +252,7 @@ pub(crate) fn treewidth_recursive_bitset(
         subset1.insert(v);
     }
 
-    if !treewidth_recursive_bitset(
-        graph,
-        &subset1,
-        &w1,
-        k,
-        max_bag,
-        separator_finder,
-    ) {
+    if !treewidth_recursive_bitset(graph, &subset1, &w1, k, max_bag, separator_finder) {
         return false;
     }
 
@@ -237,14 +268,7 @@ pub(crate) fn treewidth_recursive_bitset(
         subset2.insert(v);
     }
 
-    if !treewidth_recursive_bitset(
-        graph,
-        &subset2,
-        &w2,
-        k,
-        max_bag,
-        separator_finder,
-    ) {
+    if !treewidth_recursive_bitset(graph, &subset2, &w2, k, max_bag, separator_finder) {
         return false;
     }
 
@@ -263,6 +287,8 @@ pub(crate) fn treewidth_recursive_bitset(
     true
 }
 
+// Helper functions for the separator-finding functions. These are used to build the flow network
+// for the minimum vertex separator functions.
 pub(crate) fn build_base_flow_network(
     graph: &adjlist::Graph,
     subset: &HashSet<usize>,
@@ -293,6 +319,8 @@ pub(crate) fn build_base_flow_network(
     (base_edges, base_cap)
 }
 
+// Helper functions for the separator-finding functions. These are used to build the flow network
+// for the minimum vertex separator functions for bitset-based graphs.
 pub(crate) fn build_base_flow_network_bitset(
     graph: &bitset::Graph,
     subset: &BitSet,
@@ -323,6 +351,11 @@ pub(crate) fn build_base_flow_network_bitset(
     (base_edges, base_cap)
 }
 
+// Computes a minimum vertex separator for the given graph and subset of vertices. The `src_out` and
+// `sink_in` arguments specify the source and sink vertices in the flow network, which are used to
+// compute the minimum vertex separator using a max flow algorithm. The `k` argument is used to set
+// the flow limit for the max flow algorithm, which allows us to stop the algorithm early if
+// the flow exceeds the limit, which means that there is no separator of size at most `k`.
 pub(crate) fn minimum_vertex_separator(
     n: usize,
     edges: &[(usize, usize)],
@@ -362,6 +395,12 @@ pub(crate) fn minimum_vertex_separator(
     })
 }
 
+// Computes a minimum vertex separator for the given bitset-based graph and subset of vertices. The
+// `src_out` and `sink_in` arguments specify the source and sink vertices in the flow network,
+// which are used to compute the minimum vertex separator using a max flow algorithm. The `k`
+// argument is used to set the flow limit for the max flow algorithm, which allows us to stop the
+// algorithm early if the flow exceeds the limit, which means that there is no separator of size at
+// most `k`.
 pub(crate) fn minimum_vertex_separator_bitset(
     n: usize,
     edges: &[(usize, usize)],
@@ -402,6 +441,7 @@ pub(crate) fn minimum_vertex_separator_bitset(
     })
 }
 
+// Helper function to add an arc to the flow network.
 pub(crate) fn add_arc(
     edges: &mut Vec<(usize, usize)>,
     capacities: &mut Vec<usize>,
@@ -413,10 +453,13 @@ pub(crate) fn add_arc(
     capacities.push(cap);
 }
 
+// Helper functions to compute the in vertex indices in the flow network from the original graph vertex indices.
 pub(crate) fn vin(i: usize) -> usize {
     2 * i
 }
 
+
+// Helper functions to compute the out vertex indices in the flow network from the original graph vertex indices.
 pub(crate) fn vout(i: usize) -> usize {
     2 * i + 1
 }

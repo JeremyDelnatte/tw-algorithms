@@ -1,3 +1,5 @@
+//! Implements the CLI subcommand for heuristic treewidth computation.
+
 use std::{
     io::{BufRead, Write, stdout},
     time::Duration,
@@ -12,23 +14,30 @@ use crate::{
     timeout::{self, MemoryStats, TreewidthProcessError},
 };
 
+/// Heuristic treewidth algorithms available in the CLI.
 #[derive(Clone, ValueEnum, Debug, Copy)]
 pub enum HeuristicAlgorithmArg {
+    /// Min-fill heuristic.
     #[value(alias("mf"))]
     MinFill,
 
+    /// Min-degree heuristic.
     #[value(alias("md"))]
     MinDegree,
 
+    /// Min-degree-plus-fill heuristic.
     #[value(alias("mdpf"))]
     MinDegreePlusFill,
 
+    /// Min-sparsest-subgraph heuristic.
     #[value(alias("mss"))]
     MinSparsestSubgraph,
 
+    /// Min-fill heuristic with degree-based tie-breaking.
     #[value(alias("mfd"))]
     MinFillDegree,
 
+    /// Min-degree heuristic with fill-in-based tie-breaking.
     #[value(alias("mdf"))]
     MinDegreeFill,
 }
@@ -68,6 +77,7 @@ impl std::fmt::Display for HeuristicAlgorithmArg {
             .args(["graph", "graphs_file"])
     )
 )] // Ensure that exactly one of --graph or --file is provided
+/// Arguments for the heuristic treewidth subcommand.
 pub(super) struct HeuristicTreewidthArgs {
     #[arg(short = 'a', long, value_enum, default_value_t = HeuristicAlgorithmArg::MinFill)]
     algorithm: HeuristicAlgorithmArg,
@@ -101,6 +111,7 @@ impl HeuristicTreewidthArgs {
     }
 }
 
+/// Runs heuristic treewidth computation for the requested input.
 pub(super) fn run(
     args: HeuristicTreewidthArgs,
     with_bitset: bool,
@@ -165,11 +176,16 @@ fn heuristic_treewidth_single(
     if let Some(optimal_tw) = optimal_treewidth
         && optimal_tw > tw
     {
-        panic!("Optimal treewidth {optimal_tw} is greater than heuristic treewidth {tw} with graph {g6}");
+        panic!(
+            "Optimal treewidth {optimal_tw} is greater than heuristic treewidth {tw} with graph {g6}"
+        );
     }
 
     if !output_json {
-        println!("Computed heuristic treewidth: {}, Time taken: {:.2?}", tw, duration);
+        println!(
+            "Computed heuristic treewidth: {}, Time taken: {:.2?}",
+            tw, duration
+        );
         if let Some((allocated_bytes, peak_bytes)) = memory_stats {
             println!("Allocated bytes: {}", allocated_bytes);
             println!("Peak bytes: {}", peak_bytes);
@@ -236,7 +252,9 @@ fn heuristic_treewidth_file(
         if let Some(optimal_tw) = optimal_treewidth
             && optimal_tw > tw
         {
-            panic!("\nOptimal treewidth {optimal_tw} is greater than heuristic treewidth {tw} with graph {g6}");
+            panic!(
+                "\nOptimal treewidth {optimal_tw} is greater than heuristic treewidth {tw} with graph {g6}"
+            );
         }
 
         total_duration_ns += duration.as_nanos();
@@ -278,7 +296,10 @@ fn heuristic_treewidth_file(
                 instant.elapsed()
             );
             if let Some(avg) = avg_duration_ns {
-                println!("Average time per graph: {:.2?}", Duration::from_nanos(avg as u64));
+                println!(
+                    "Average time per graph: {:.2?}",
+                    Duration::from_nanos(avg as u64)
+                );
             }
             if let Some(avg) = avg_allocated_bytes {
                 println!("Average allocated bytes per graph: {}", avg);
@@ -307,7 +328,10 @@ fn heuristic_treewidth_file(
             count, elapsed
         );
         if let Some(avg) = avg_duration_ns {
-            println!("Average time per graph: {:.2?}", Duration::from_nanos(avg as u64));
+            println!(
+                "Average time per graph: {:.2?}",
+                Duration::from_nanos(avg as u64)
+            );
         }
         if let Some(avg) = avg_allocated_bytes {
             println!("Average allocated bytes per graph: {}", avg);
@@ -338,7 +362,11 @@ fn heuristic_treewidth_with_optional_memory(
     let _profiler = dhat::Profiler::builder().testing().build();
     let result = treewidth::heuristic_treewidth(g6, algorithm.into(), with_bitset)?;
     let stats = dhat::HeapStats::get();
-    Ok((result.0, result.1, Some((stats.total_bytes, stats.max_bytes as u64))))
+    Ok((
+        result.0,
+        result.1,
+        Some((stats.total_bytes, stats.max_bytes as u64)),
+    ))
 }
 
 #[cfg(not(feature = "measure-memory"))]
